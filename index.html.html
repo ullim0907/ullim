@@ -1,0 +1,2200 @@
+<title>안성공장 컨버팅 스케줄보드</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<!-- ============================================================
+     실시간 동기화: Firebase Firestore
+     아래 FIREBASE_CONFIG 값을 본인의 Firebase 프로젝트 설정값으로
+     교체하세요. (사용가이드의 "실시간 서버 연결하기" 섹션 참고)
+     ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+
+<style>
+  :root{
+    --paper:#f6f4ef;
+    --surface:#ffffff;
+    --surface-2:#f0ede6;
+    --ink:#20242b;
+    --ink-soft:#565b64;
+    --line:#ddd7ca;
+    --line-strong:#c7bfae;
+    --accent:#2f6f5e;
+    --accent-soft:#dcebe6;
+    --focus:#2f6f5e;
+
+    --wip-bg:#f8d9d4;
+    --wip-border:#d98d80;
+    --wip-text:#7c2e22;
+    --planned-bg:#d9ead9;
+    --planned-border:#8fbf93;
+    --planned-text:#2b5e34;
+    --hold-bg:#e4e1da;
+    --hold-border:#b7b0a1;
+    --hold-text:#514c40;
+    --hold-badge:#8a8375;
+    --done-bg:#dbe6ec;
+    --done-border:#9db7c4;
+    --done-text:#33505f;
+    --done-badge:#4f7997;
+
+    --drop:#fbefc9;
+
+    /* 85% of the original "카드 생성" button height (~34px), shared by the
+       week-nav / search-box / 카드생성 controls and the view tabs above them */
+    --ctrl-h:29px;
+
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#181a1d;
+      --surface:#212327;
+      --surface-2:#26282d;
+      --ink:#eceae4;
+      --ink-soft:#a9a69d;
+      --line:#3a3c40;
+      --line-strong:#4c4e53;
+      --accent:#6fbfa4;
+      --accent-soft:#28352f;
+      --focus:#6fbfa4;
+
+      --wip-bg:#4a2a25;
+      --wip-border:#8a4137;
+      --wip-text:#f4bcb0;
+      --planned-bg:#28402a;
+      --planned-border:#4f7a52;
+      --planned-text:#bfe4c1;
+      --hold-bg:#34322c;
+      --hold-border:#57534a;
+      --hold-text:#cfc9bb;
+      --hold-badge:#8f887a;
+      --done-bg:#243642;
+      --done-border:#3f5c6c;
+      --done-text:#b7d3e0;
+      --done-badge:#5c8aa8;
+
+      --drop:#4a3f1c;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"]{
+    --paper:#181a1d;
+    --surface:#212327;
+    --surface-2:#26282d;
+    --ink:#eceae4;
+    --ink-soft:#a9a69d;
+    --line:#3a3c40;
+    --line-strong:#4c4e53;
+    --accent:#6fbfa4;
+    --accent-soft:#28352f;
+    --focus:#6fbfa4;
+
+    --wip-bg:#4a2a25;
+    --wip-border:#8a4137;
+    --wip-text:#f4bcb0;
+    --planned-bg:#28402a;
+    --planned-border:#4f7a52;
+    --planned-text:#bfe4c1;
+    --hold-bg:#34322c;
+    --hold-border:#57534a;
+    --hold-text:#cfc9bb;
+    --hold-badge:#8f887a;
+    --done-bg:#243642;
+    --done-border:#3f5c6c;
+    --done-text:#b7d3e0;
+    --done-badge:#5c8aa8;
+
+    --drop:#4a3f1c;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR", "Noto Sans KR", sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .num{font-family:"IBM Plex Mono","IBM Plex Sans KR",monospace; font-variant-numeric:tabular-nums;}
+
+  button{
+    font-family:inherit;
+    cursor:pointer;
+  }
+  :focus-visible{
+    outline:2px solid var(--focus);
+    outline-offset:2px;
+  }
+
+  #app{
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    padding:14px 18px 18px;
+    gap:12px;
+  }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .topbar-row{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+  }
+  /* right-hand column: view tabs stacked above the controls row. Neither
+     child is stretched (align-items:flex-end), so whichever row is wider
+     (normally .controls) sets the column's width and the narrower row's
+     right edge lines up with it automatically — no hardcoded widths. */
+  .topbar-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    gap:8px;
+  }
+  .title-block h1{
+    margin:0;
+    font-size:1.35rem;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .title-block .sub{
+    margin:2px 0 0;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+  }
+  .conn-flag{
+    display:inline-block;
+    font-size:0.72rem;
+    font-weight:600;
+    padding:2px 8px;
+    border-radius:20px;
+    margin-top:4px;
+    color:var(--wip-text);
+    background:var(--wip-bg);
+    border:1px solid var(--wip-border);
+  }
+  .conn-flag[data-state="ok"]{
+    color:var(--planned-text);
+    background:var(--planned-bg);
+    border-color:var(--planned-border);
+  }
+  .conn-flag[data-state="config"]{
+    color:var(--hold-text);
+    background:var(--hold-bg);
+    border-color:var(--hold-border);
+  }
+
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content:flex-start;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .week-nav{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    height:var(--ctrl-h);
+    box-sizing:border-box;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:0 3px;
+  }
+  .week-nav button{
+    background:transparent;
+    border:none;
+    color:var(--ink);
+    height:100%;
+    padding:0 10px;
+    border-radius:7px;
+    font-size:0.8rem;
+    font-weight:500;
+    display:inline-flex;
+    align-items:center;
+  }
+  .week-nav button:hover{background:var(--surface-2);}
+  .week-range{
+    display:inline-flex;
+    align-items:center;
+    height:100%;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+    padding:0 6px;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .btn{
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--ink);
+    padding:8px 14px;
+    border-radius:9px;
+    font-size:0.85rem;
+    font-weight:500;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .btn:hover{background:var(--surface-2);}
+  .btn.primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fbfbf9;
+  }
+  .btn.primary:hover{filter:brightness(1.06);}
+  .btn.ghost{
+    background:transparent;
+    border-color:transparent;
+    color:var(--ink-soft);
+  }
+  /* scoped to the topbar controls row only — dialog buttons keep the
+     full-size .btn defined above */
+  .controls .btn{
+    height:var(--ctrl-h);
+    box-sizing:border-box;
+    padding:0 14px;
+  }
+
+  .search-box{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    height:var(--ctrl-h);
+    box-sizing:border-box;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:0 10px;
+  }
+  .search-box input{
+    border:none;
+    background:transparent;
+    color:var(--ink);
+    font-size:0.85rem;
+    outline:none;
+    width:150px;
+  }
+  .search-box svg{flex:none; opacity:0.55;}
+
+  /* ---------- View tabs (same size as the 카드생성 button above: --ctrl-h) ---------- */
+  .view-tabs{
+    display:flex;
+    gap:8px;
+  }
+  .view-tab{
+    background:var(--surface);
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    height:var(--ctrl-h);
+    box-sizing:border-box;
+    padding:0 14px;
+    border-radius:9px;
+    font-size:0.85rem;
+    font-weight:500;
+    display:inline-flex;
+    align-items:center;
+  }
+  .view-tab:hover{background:var(--surface-2); color:var(--ink);}
+  #app[data-local-view="board"] #tabBoard,
+  #app[data-local-view="raw"] #tabRaw{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fbfbf9;
+  }
+  #app[data-local-view="board"] .raw-only{display:none;}
+  #app[data-local-view="raw"] .board-only{display:none;}
+
+  /* ---------- Legend ---------- */
+  .legend{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+    font-size:0.76rem;
+    color:var(--ink-soft);
+  }
+  .legend .swatch-item{display:flex; align-items:center; gap:6px;}
+  .swatch{
+    width:13px; height:13px; border-radius:20px;
+    flex:none;
+  }
+  .swatch.wip{background:var(--wip-border);}
+  .swatch.planned{background:none; border:1px solid var(--line-strong);}
+  .swatch.hold{background:var(--hold-badge);}
+  .swatch.done{background:var(--done-badge);}
+  .legend label{display:flex; align-items:center; gap:5px; cursor:pointer;}
+
+  /* ---------- Unassigned tray ---------- */
+  .tray-wrap{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:12px 14px;
+    flex:none;
+    transition:padding .15s ease;
+  }
+  .tray-head{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .tray-head h2{
+    margin:0;
+    font-size:0.76rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+  }
+  .tray-count{
+    font-size:0.72rem;
+    background:var(--accent-soft);
+    color:var(--accent);
+    padding:2px 9px;
+    border-radius:20px;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .tray-toggle{
+    margin-left:auto;
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    font-size:0.72rem;
+    font-weight:600;
+    padding:4px 10px;
+    border-radius:8px;
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+  }
+  .tray-toggle:hover{background:var(--surface-2); color:var(--ink);}
+  .tray-toggle svg{transition:transform .15s ease;}
+  .tray-wrap[data-local-collapsed="1"] .tray-toggle svg{transform:rotate(-90deg);}
+  .tray-wrap[data-local-collapsed="1"] #unassigned,
+  .tray-wrap[data-local-collapsed="1"] .tray-empty-hint{display:none;}
+  /* ~85% of the previous collapsed-state height */
+  .tray-wrap[data-local-collapsed="1"]{padding-top:11px; padding-bottom:10px;}
+  .tray-wrap[data-local-collapsed="1"] .tray-head{margin-bottom:4px;}
+  .tray-toggle:disabled{opacity:0.45; cursor:default;}
+  .tray-toggle:disabled:hover{background:transparent; color:var(--ink-soft);}
+
+  #unassigned{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(230px, 1fr));
+    align-content:start;
+    gap:10px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    max-height:300px;
+    padding:2px;
+    border-radius:10px;
+  }
+  #unassigned.local-dragover{background:var(--drop);}
+  .tray-wrap.local-dragover{background:var(--drop);}
+  .tray-empty-hint{
+    grid-column:1 / -1;
+    font-size:0.8rem;
+    color:var(--ink-soft);
+    text-align:center;
+    padding:20px 14px;
+  }
+
+  /* ---------- Schedule grid (day-columns, no time axis) ---------- */
+  .grid-wrap{
+    flex:1;
+    min-height:0;
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:auto;
+    position:relative;
+    padding:10px;
+  }
+  .board-grid{
+    display:grid;
+    grid-template-columns:repeat(6, minmax(200px, 1fr));
+    gap:3px;
+    min-width:1240px;
+    height:100%;
+  }
+  .day-col{
+    display:flex;
+    flex-direction:column;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:12px;
+    overflow:hidden;
+    min-height:0;
+  }
+  .day-col[data-day="tue"], .day-col[data-day="thu"], .day-col[data-day="sat"]{
+    background:var(--surface-2);
+  }
+  .day-header{
+    flex:none;
+    padding:3px 11px 2px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .day-col[data-day="tue"] .day-header, .day-col[data-day="thu"] .day-header, .day-col[data-day="sat"] .day-header{
+    background:var(--surface-2);
+  }
+  .day-header .day-date{font-size:0.86rem; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-0.01em;}
+  .day-header .day-count{
+    font-weight:600;
+    font-size:0.66rem;
+    color:var(--ink-soft);
+    opacity:0.75;
+    font-variant-numeric:tabular-nums;
+  }
+  .today-badge{
+    font-size:0.6rem;
+    font-weight:700;
+    color:var(--accent);
+    background:var(--accent-soft);
+    padding:1px 6px;
+    border-radius:20px;
+    margin-left:6px;
+    vertical-align:middle;
+  }
+  .today-badge:empty{display:none;}
+  .day-col.is-today{border-color:var(--accent); border-width:1.5px;}
+  .day-col.is-today .day-header{background:var(--accent-soft);}
+  .cell{
+    flex:1;
+    padding:8px;
+    display:flex;
+    flex-direction:column;
+    gap:7px;
+    min-height:60px;
+    align-items:stretch;
+    overflow-y:auto;
+    transition:background .1s ease;
+  }
+  .cell.local-dragover{background:var(--drop) !important;}
+  .day-footer{
+    flex:none;
+    padding:2px 11px 2px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    background:var(--surface);
+  }
+  .day-col[data-day="tue"] .day-footer, .day-col[data-day="thu"] .day-footer, .day-col[data-day="sat"] .day-footer{
+    background:var(--surface-2);
+  }
+  .day-footer-row{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    font-variant-numeric:tabular-nums;
+  }
+  .day-footer-row span:last-child{font-weight:700; color:var(--ink);}
+
+  /* ---------- Raw Data table ---------- */
+  .rawdata-wrap{
+    flex:1;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .rawdata-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    flex-wrap:wrap;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+  .rawdata-range{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .rawdata-date-input{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:4px 8px;
+    color:var(--ink);
+    font-family:inherit;
+    font-size:0.8rem;
+    font-variant-numeric:tabular-nums;
+  }
+  .rawdata-search-btn{
+    min-width:132px; /* ~3x the width of the other rawdata-range buttons */
+    font-weight:700;
+  }
+
+  /* week-nav / search / 카드생성 are meaningless while viewing Raw Data */
+  #app[data-local-view="raw"] .week-nav,
+  #app[data-local-view="raw"] .search-box,
+  #app[data-local-view="raw"] .controls .btn{
+    opacity:0.45;
+    pointer-events:none;
+  }
+  .rawdata-scroll{
+    flex:1;
+    min-height:0;
+    overflow:auto;
+    border:1px solid var(--line);
+    border-radius:14px;
+    background:var(--surface);
+  }
+  .rawdata-table{
+    border-collapse:collapse;
+    font-size:0.72rem;
+    white-space:nowrap;
+    width:max-content;
+    min-width:100%;
+  }
+  .rawdata-table th, .rawdata-table td{
+    padding:6px 10px;
+    border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line);
+    text-align:center;
+  }
+  .rawdata-table th:last-child, .rawdata-table td:last-child{border-right:none;}
+  .rawdata-table thead th{
+    position:sticky;
+    top:0;
+    background:var(--surface-2);
+    font-weight:700;
+    color:var(--ink-soft);
+    font-size:0.65rem;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    z-index:1;
+  }
+  .rawdata-table tbody tr:nth-child(even){background:var(--surface-2);}
+  .rawdata-table td{font-variant-numeric:tabular-nums;}
+  .rawdata-table td.rd-note{white-space:normal; max-width:220px; text-align:left; font-variant-numeric:normal;}
+  .rawdata-table td.rd-empty{padding:30px; color:var(--ink-soft); font-variant-numeric:normal;}
+
+  /* ---------- Card ---------- */
+  .card{
+    border-radius:9px;
+    padding:7px 10px;
+    font-size:0.73rem;
+    line-height:1.4;
+    font-family:"IBM Plex Sans KR", "Noto Sans KR", sans-serif;
+    cursor:grab;
+    border:1px solid var(--line-strong);
+    background:var(--surface);
+    color:var(--ink);
+    position:relative;
+    box-shadow:0 1px 2px rgba(20,18,14,0.05);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .card:hover{
+    transform:translateY(-1px);
+    box-shadow:0 4px 10px rgba(20,18,14,0.14);
+  }
+  .card:active{cursor:grabbing; transform:translateY(0); box-shadow:0 1px 2px rgba(20,18,14,0.08);}
+  .card .card-badge{
+    position:absolute;
+    top:6px;
+    right:8px;
+    display:inline-block;
+    color:#fff;
+    font-size:0.6rem;
+    font-weight:700;
+    padding:1px 7px;
+    border-radius:20px;
+    letter-spacing:0.01em;
+  }
+  .card .card-badge.badge-wip{background:var(--wip-border);}
+  .card .card-badge.badge-hold{background:var(--hold-badge);}
+  .card .card-badge.badge-done{background:var(--done-badge);}
+  .card .card-line1{
+    font-weight:700;
+    font-size:0.76rem;
+    padding-right:40px;
+    margin-bottom:2px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .card .card-line2, .card .card-line3{
+    font-size:0.67rem;
+    color:var(--ink-soft);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .card .card-time{
+    font-size:0.63rem;
+    margin-top:3px;
+    padding-top:3px;
+    border-top:1px dashed var(--line-strong);
+    color:var(--ink-soft);
+  }
+  .card[data-local-hidden]{display:none;}
+  .card[data-local-week-off]{display:none;}
+
+  /* ---------- Dialogs ---------- */
+  dialog{
+    border:none;
+    border-radius:14px;
+    padding:0;
+    background:var(--surface);
+    color:var(--ink);
+    width:min(560px, 92vw);
+    box-shadow:0 20px 60px rgba(0,0,0,0.25);
+  }
+  dialog::backdrop{
+    background:rgba(20,18,14,0.45);
+  }
+  .dlg-inner{padding:20px 22px 20px;}
+  .dlg-inner h2{
+    margin:0 0 4px;
+    font-size:1.05rem;
+  }
+  .dlg-sub{
+    margin:0 0 14px;
+    font-size:0.78rem;
+    color:var(--ink-soft);
+  }
+  .dlg-inner textarea{
+    width:100%;
+    min-height:180px;
+    resize:vertical;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:8px;
+    color:var(--ink);
+    font-family:"IBM Plex Mono",monospace;
+    font-size:0.74rem;
+    padding:10px;
+  }
+  .dlg-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    margin-top:16px;
+  }
+  .paste-hint{
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    background:var(--surface-2);
+    border-radius:8px;
+    padding:8px 10px;
+    margin-bottom:10px;
+  }
+  .paste-hint code{
+    background:var(--paper);
+    padding:1px 4px;
+    border-radius:4px;
+  }
+
+  /* detail dialog */
+  .detail-box{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:14px;
+    background:var(--surface-2);
+  }
+  .detail-row{
+    display:flex;
+    align-items:baseline;
+    gap:8px;
+    padding:8px 12px;
+    border-bottom:1px solid var(--line);
+    border-right:1px solid var(--line);
+    font-size:0.82rem;
+  }
+  .detail-row:nth-child(2n){border-right:none;}
+  .detail-row:nth-last-child(-n+2){border-bottom:none;}
+  .detail-k{
+    flex:none;
+    font-size:0.68rem;
+    color:var(--ink-soft);
+    font-weight:600;
+    letter-spacing:0.02em;
+  }
+  .detail-v{
+    font-weight:600;
+    text-align:right;
+    margin-left:auto;
+    font-variant-numeric:tabular-nums;
+  }
+  .detail-table-wrap{
+    margin-bottom:12px;
+  }
+  .detail-table-title{
+    font-size:0.7rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.04em;
+    margin-bottom:5px;
+  }
+  .detail-table-scroll{overflow-x:auto; border-radius:10px; border:1px solid var(--line);}
+  .detail-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.82rem;
+    background:var(--surface-2);
+  }
+  .detail-table th, .detail-table td{
+    padding:8px 10px;
+    text-align:center;
+    white-space:nowrap;
+  }
+  .detail-table thead th{
+    font-size:0.68rem;
+    font-weight:700;
+    color:var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    background:var(--surface);
+    border-bottom:1px solid var(--line);
+  }
+  .detail-table tbody td{
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  .detail-table tbody td:last-child{color:var(--accent);}
+  .detail-note-box{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:9px 12px;
+    margin-bottom:14px;
+  }
+  .detail-note-box p{
+    margin:0;
+    font-size:0.82rem;
+    line-height:1.5;
+  }
+  .detail-table-title-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:5px;
+  }
+  .detail-table-title-row .detail-table-title{margin-bottom:0;}
+  .detail-registrant{
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    font-weight:600;
+  }
+  .detail-registrant span{color:var(--ink); font-weight:700;}
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field.full{grid-column:1 / -1;}
+  .field label{font-size:0.72rem; color:var(--ink-soft); font-weight:600;}
+  .field label .field-hint{font-weight:500; opacity:0.7; text-transform:none; letter-spacing:0;}
+  .field input, .field select, .field textarea{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:7px 9px;
+    color:var(--ink);
+    font-family:inherit;
+    font-size:0.85rem;
+  }
+  .field textarea{min-height:60px; resize:vertical; font-family:inherit;}
+  .field-invalid{
+    border-color:var(--wip-border) !important;
+    box-shadow:0 0 0 2px var(--wip-bg);
+  }
+  .time-select-row{display:flex; align-items:center; gap:5px;}
+  .time-select-row select{flex:1; min-width:0;}
+  .time-select-row span{color:var(--ink-soft); font-weight:600;}
+  .divider{
+    border:none;
+    border-top:1px solid var(--line);
+    margin:14px 0;
+  }
+  .week-shift-btn{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    padding:5px 10px;
+    border-radius:8px;
+    font-size:0.72rem;
+    font-weight:600;
+    white-space:nowrap;
+  }
+  .week-shift-btn:hover{background:var(--surface); color:var(--ink); border-color:var(--line-strong);}
+  .badge-status-pill{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:0.72rem;
+    font-weight:600;
+    padding:3px 10px;
+    border-radius:20px;
+  }
+  .del-btn{
+    background:transparent;
+    border:1px solid var(--wip-border);
+    color:var(--wip-text);
+    padding:7px 12px;
+    border-radius:9px;
+    font-size:0.82rem;
+    font-weight:500;
+  }
+  .del-btn.confirming{background:var(--wip-bg);}
+
+  /* toast (appended straight to body -> stays local per-viewer) */
+  .toast{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:var(--paper);
+    padding:10px 18px;
+    border-radius:24px;
+    font-size:0.82rem;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    z-index:999;
+    opacity:0;
+    transition:opacity .25s ease, transform .25s ease;
+  }
+  .toast.show{opacity:1;}
+
+  ::-webkit-scrollbar{height:10px; width:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--line-strong); border-radius:6px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important; animation:none !important;}
+  }
+</style>
+
+<div id="app" data-local-view="board">
+
+  <div class="topbar">
+    <div class="topbar-row">
+      <div class="title-block">
+        <h1>안성공장 컨버팅 스케줄보드</h1>
+        <p class="sub">더울림코퍼레이션 · 컨버팅 1호기 · 실시간 공유 화면</p>
+        <span class="conn-flag" id="connFlag" data-state="wait">● 연결 확인 중...</span>
+      </div>
+      <div class="topbar-actions">
+        <div class="view-tabs">
+          <button class="view-tab" id="tabBoard" type="button">스케줄보드</button>
+          <button class="view-tab" id="tabRaw" type="button">Raw Data</button>
+        </div>
+        <div class="controls">
+          <div class="week-nav">
+            <button id="prevWeek" title="이전 주">◀</button>
+            <span class="week-range num" id="weekRange">-</span>
+            <button id="thisWeek" title="이번 주">오늘</button>
+            <button id="nextWeek" title="다음 주">▶</button>
+          </div>
+          <div class="search-box">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" id="searchInput" placeholder="매출처·평량·지종·등록자 검색" />
+          </div>
+          <button class="btn primary" id="openPaste">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>
+            카드 생성
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tray-wrap board-only" id="trayWrap">
+    <div class="tray-head">
+      <h2>미배정 (요일·시간 미지정 — 드래그해서 배치하세요)</h2>
+      <span class="tray-count" id="trayCount">0건</span>
+      <button class="tray-toggle" id="trayToggle" type="button">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+        접기
+      </button>
+    </div>
+    <div id="unassigned">
+      <div class="tray-empty-hint" id="trayEmptyHint">아직 불러온 스케줄이 없습니다. 우측 상단의 "표 붙여넣기"로 엑셀 데이터를 추가하세요.</div>
+    </div>
+  </div>
+
+  <div class="grid-wrap board-only">
+    <div class="board-grid" id="scheduleGrid">
+      <div class="day-col" data-day="mon">
+        <div class="day-header"><span><span class="day-date" data-local="1">월</span><span class="today-badge" data-local="1"></span></span><span class="day-count" data-local="1"></span></div>
+        <div class="cell" data-day="mon"></div>
+        <div class="day-footer">
+          <div class="day-footer-row"><span>완료</span><span class="day-sum-done" data-local="1">0T</span></div>
+          <div class="day-footer-row"><span>작업예정</span><span class="day-sum-planned" data-local="1">0T</span></div>
+        </div>
+      </div>
+      <div class="day-col" data-day="tue">
+        <div class="day-header"><span><span class="day-date" data-local="1">화</span><span class="today-badge" data-local="1"></span></span><span class="day-count" data-local="1"></span></div>
+        <div class="cell" data-day="tue"></div>
+        <div class="day-footer">
+          <div class="day-footer-row"><span>완료</span><span class="day-sum-done" data-local="1">0T</span></div>
+          <div class="day-footer-row"><span>작업예정</span><span class="day-sum-planned" data-local="1">0T</span></div>
+        </div>
+      </div>
+      <div class="day-col" data-day="wed">
+        <div class="day-header"><span><span class="day-date" data-local="1">수</span><span class="today-badge" data-local="1"></span></span><span class="day-count" data-local="1"></span></div>
+        <div class="cell" data-day="wed"></div>
+        <div class="day-footer">
+          <div class="day-footer-row"><span>완료</span><span class="day-sum-done" data-local="1">0T</span></div>
+          <div class="day-footer-row"><span>작업예정</span><span class="day-sum-planned" data-local="1">0T</span></div>
+        </div>
+      </div>
+      <div class="day-col" data-day="thu">
+        <div class="day-header"><span><span class="day-date" data-local="1">목</span><span class="today-badge" data-local="1"></span></span><span class="day-count" data-local="1"></span></div>
+        <div class="cell" data-day="thu"></div>
+        <div class="day-footer">
+          <div class="day-footer-row"><span>완료</span><span class="day-sum-done" data-local="1">0T</span></div>
+          <div class="day-footer-row"><span>작업예정</span><span class="day-sum-planned" data-local="1">0T</span></div>
+        </div>
+      </div>
+      <div class="day-col" data-day="fri">
+        <div class="day-header"><span><span class="day-date" data-local="1">금</span><span class="today-badge" data-local="1"></span></span><span class="day-count" data-local="1"></span></div>
+        <div class="cell" data-day="fri"></div>
+        <div class="day-footer">
+          <div class="day-footer-row"><span>완료</span><span class="day-sum-done" data-local="1">0T</span></div>
+          <div class="day-footer-row"><span>작업예정</span><span class="day-sum-planned" data-local="1">0T</span></div>
+        </div>
+      </div>
+      <div class="day-col" data-day="sat">
+        <div class="day-header"><span><span class="day-date" data-local="1">토</span><span class="today-badge" data-local="1"></span></span><span class="day-count" data-local="1"></span></div>
+        <div class="cell" data-day="sat"></div>
+        <div class="day-footer">
+          <div class="day-footer-row"><span>완료</span><span class="day-sum-done" data-local="1">0T</span></div>
+          <div class="day-footer-row"><span>작업예정</span><span class="day-sum-planned" data-local="1">0T</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="legend board-only">
+    <span class="legend-title">카드 상태</span>
+    <span class="swatch-item"><span class="swatch wip"></span>작업중 (붉은 배지)</span>
+    <span class="swatch-item"><span class="swatch planned"></span>작업예정 (배지 없음)</span>
+    <span class="swatch-item"><span class="swatch done"></span>완료 (파란 배지)</span>
+    <span class="swatch-item"><span class="swatch hold"></span>보류 (회색 배지)</span>
+    <label><input type="checkbox" id="hideDone"> 완료 카드 숨기기</label>
+  </div>
+
+  <div class="rawdata-wrap raw-only" id="rawDataWrap">
+    <div class="rawdata-bar">
+      <div class="rawdata-range">
+        <button class="week-shift-btn" id="rawPrevWeek" type="button" title="이전주">◀ 이전주</button>
+        <input type="date" id="rawStartDate" class="rawdata-date-input" title="배정일(스케줄) 검색 시작일" />
+        <span>~</span>
+        <input type="date" id="rawEndDate" class="rawdata-date-input" title="배정일(스케줄) 검색 종료일 (최대 31일)" />
+        <button class="week-shift-btn" id="rawNextWeek" type="button" title="다음주">다음주 ▶</button>
+        <button class="week-shift-btn rawdata-search-btn" id="rawApplyRange" type="button">검색</button>
+      </div>
+      <span id="rawDataCount">0건</span>
+    </div>
+    <div class="rawdata-scroll">
+      <table class="rawdata-table">
+        <thead>
+          <tr>
+            <th>순번</th>
+            <th>예정일자</th><th>매입처</th><th>창고</th><th>제조사(소요)</th><th>지종(소요)</th><th>평량(소요)</th><th>가로(소요)</th><th>세로(소요)</th><th>소요수량</th><th>소요중량</th>
+            <th>납기일</th><th>매출처</th><th>입고처</th>
+            <th>제조사(계획)</th><th>지종(계획)</th><th>평량(계획)</th><th>가로(계획)</th><th>세로(계획)</th><th>생산수량(계획)</th><th>생산중량</th>
+            <th>비고</th><th>상태(원본)</th><th>등록자</th><th>등록일시</th>
+            <th>배정일(스케줄)</th>
+            <th>카드상태</th><th>LOT정보</th><th>시작시간</th><th>종료시간</th><th>최종생산수량</th><th>담당자</th><th>특이사항</th>
+          </tr>
+        </thead>
+        <tbody id="rawDataBody" data-local="1"></tbody>
+      </table>
+    </div>
+  </div>
+
+<!-- Paste import dialog -->
+<dialog id="pasteDialog">
+  <div class="dlg-inner">
+    <h2>표 붙여넣기</h2>
+    <p class="dlg-sub">사무실 생산관리 엑셀에서 데이터 범위를 복사(Ctrl+C)한 뒤 아래에 붙여넣으세요(Ctrl+V).</p>
+    <p class="paste-hint">
+      열 구성: <code>예정일자, 매입처, 창고, 제조사, 지종, 평량, 가로, 세로, 소요수량, 소요중량, 납기일, 매출처, 입고처, 제조사, 지종, 평량, 가로, 세로, 생산수량, 생산중량, 비고, 상태, 등록, 등록일시</code> (헤더 행 포함해도, 빼고 붙여넣어도 자동 인식됩니다. 같은 등록일시 건은 자동으로 갱신됩니다.)
+    </p>
+    <textarea id="pasteArea" placeholder="여기에 엑셀 표를 붙여넣으세요..."></textarea>
+    <div class="dlg-actions">
+      <button class="btn ghost" id="pasteCancel">취소</button>
+      <button class="btn primary" id="pasteSubmit">가져오기</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Card detail dialog -->
+<dialog id="detailDialog">
+  <div class="dlg-inner">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px;">
+      <h2 style="margin:0;">스케줄 상세</h2>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <button class="week-shift-btn" id="shiftPrevWeek" type="button" title="이전주 토요일로 이동">◀ 이전주</button>
+        <button class="week-shift-btn" id="shiftNextWeek" type="button" title="다음주 월요일로 이동">다음주 ▶</button>
+        <span class="badge-status-pill" id="detailStatusPill">-</span>
+      </div>
+    </div>
+    <div class="detail-box">
+      <div class="detail-row"><span class="detail-k">예정일</span><span class="detail-v" id="dDate">-</span></div>
+      <div class="detail-row"><span class="detail-k">창고</span><span class="detail-v" id="dWarehouse">-</span></div>
+      <div class="detail-row"><span class="detail-k">매출처</span><span class="detail-v" id="dBuyer">-</span></div>
+      <div class="detail-row"><span class="detail-k">납기일</span><span class="detail-v" id="dDue">-</span></div>
+      <div class="detail-row"><span class="detail-k">입고처</span><span class="detail-v" id="dArrival">-</span></div>
+    </div>
+
+    <div class="detail-table-wrap">
+      <div class="detail-table-title">소요재고</div>
+      <div class="detail-table-scroll">
+        <table class="detail-table">
+          <thead><tr><th>지종</th><th>평량</th><th>가로</th><th>세로</th><th>소요량</th></tr></thead>
+          <tbody><tr>
+            <td id="dNeedPaper">-</td><td id="dNeedBasis">-</td><td id="dNeedW">-</td><td id="dNeedH">-</td><td id="dNeedQty">-</td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-table-wrap">
+      <div class="detail-table-title">컨버팅계획재고</div>
+      <div class="detail-table-scroll">
+        <table class="detail-table">
+          <thead><tr><th>지종</th><th>평량</th><th>가로</th><th>세로</th><th>계획량</th></tr></thead>
+          <tbody><tr>
+            <td id="dPlanPaper">-</td><td id="dPlanBasis">-</td><td id="dPlanW">-</td><td id="dPlanH">-</td><td id="dPlanQty">-</td>
+          </tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="detail-note-box">
+      <div class="detail-table-title-row">
+        <span class="detail-table-title">비고</span>
+        <span class="detail-registrant">등록 <span id="dReg">-</span></span>
+      </div>
+      <p id="dNote">-</p>
+    </div>
+
+    <hr class="divider" />
+
+    <div class="field-row">
+      <div class="field">
+        <label for="fStatus">카드 상태</label>
+        <select id="fStatus">
+          <option value="planned">작업예정</option>
+          <option value="wip">작업중</option>
+          <option value="done">완료</option>
+          <option value="hold">보류</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fLot">LOT 정보</label>
+        <input type="text" id="fLot" placeholder="LOT 번호를 입력하세요" />
+      </div>
+      <div class="field">
+        <label for="fStartH">시작시간</label>
+        <div class="time-select-row">
+          <select id="fStartH"></select><span>:</span><select id="fStartM"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fEndH">종료시간</label>
+        <div class="time-select-row">
+          <select id="fEndH"></select><span>:</span><select id="fEndM"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fFinalQty">최종 생산수량 R</label>
+        <input type="text" id="fFinalQty" />
+      </div>
+      <div class="field">
+        <label for="fCloser">담당자 <span class="field-hint">(마감 입력자 메모)</span></label>
+        <input type="text" id="fCloser" placeholder="마감 처리자 이름을 입력하세요" />
+      </div>
+      <div class="field full">
+        <label for="fMemo">특이사항</label>
+        <textarea id="fMemo" placeholder="현장 메모를 입력하세요"></textarea>
+      </div>
+    </div>
+
+    <div class="dlg-actions" style="justify-content:space-between;">
+      <button class="del-btn" id="deleteCard">카드 삭제</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn ghost" id="detailCancel">닫기</button>
+        <button class="btn primary" id="detailSave">저장</button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  "use strict";
+
+  var DAYS = ["mon","tue","wed","thu","fri","sat"];
+  var DAY_LABEL = {mon:"월", tue:"화", wed:"수", thu:"목", fri:"금", sat:"토"};
+  var STATUS_LABEL = {wip:"작업중", planned:"작업예정", hold:"보류", done:"완료"};
+
+  var grid = document.getElementById("scheduleGrid");
+  var unassigned = document.getElementById("unassigned");
+  var trayEmptyHint = document.getElementById("trayEmptyHint");
+  var trayCount = document.getElementById("trayCount");
+  var weekRangeEl = document.getElementById("weekRange");
+
+  // ================================================================
+  // 실시간 동기화 (Firebase Firestore)
+  //
+  // 카드 데이터는 전부 Firestore의 "cards" 컬렉션에 저장되고, 모든
+  // 접속자에게 실시간으로 반영됩니다. 화면(DOM)은 항상 cardsState
+  // (=Firestore의 현재 스냅샷)를 그대로 그려낸 "결과물"일 뿐이고,
+  // 카드를 만들거나/옮기거나/수정/삭제하는 모든 동작은 로컬 화면을
+  // 직접 바꾸지 않고 Firestore에 씁니다. 그 쓰기가 다시 실시간
+  // 리스너로 돌아와서 화면을 다시 그립니다.
+  // ================================================================
+  var FIREBASE_CONFIG = {
+    apiKey: "AIzaSyCUMmPdmIWf1cWeseCfVrx2kewauonSijI",
+    authDomain: "tucorp-93a17.firebaseapp.com",
+    projectId: "tucorp-93a17",
+    storageBucket: "tucorp-93a17.firebasestorage.app",
+    messagingSenderId: "732272963693",
+    appId: "1:732272963693:web:bae32168bfd9726de30f64"
+  };
+
+  var connFlag = document.getElementById("connFlag");
+  var cardsCol = null; // Firestore collection reference
+  var cardsState = {}; // key -> card data object (mirrors the "cards" collection)
+  var fbReady = false;
+
+  function isConfigured(){
+    return FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf("PASTE_") !== 0;
+  }
+
+  function initFirebase(){
+    if (!isConfigured()){
+      connFlag.textContent = "⚠ 서버 미설정 (사용가이드 참고, 이 화면은 저장되지 않습니다)";
+      connFlag.setAttribute("data-state", "config");
+      return;
+    }
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+    } catch (err){
+      connFlag.textContent = "⚠ 연결 실패: " + (err && err.message ? err.message : err);
+      connFlag.setAttribute("data-state", "config");
+      return;
+    }
+    var db = firebase.firestore();
+    cardsCol = db.collection("cards");
+
+    connFlag.textContent = "● 연결 확인 중...";
+    connFlag.setAttribute("data-state", "wait");
+
+    cardsCol.onSnapshot(function(snapshot){
+      fbReady = true;
+      connFlag.textContent = "🟢 실시간 연결됨";
+      connFlag.setAttribute("data-state", "ok");
+      var next = {};
+      snapshot.forEach(function(doc){ next[doc.id] = doc.data(); });
+      cardsState = next;
+      renderAll();
+    }, function(err){
+      connFlag.textContent = "⚠ 연결 실패: " + (err && err.message ? err.message : err);
+      connFlag.setAttribute("data-state", "config");
+    });
+  }
+
+  // ---- write helpers: every mutation goes through Firestore, never the DOM directly ----
+  function fbSet(key, data){
+    if (!cardsCol) return;
+    cardsCol.doc(key).set(data);
+  }
+  function fbUpdate(key, patch){
+    if (!cardsCol) return;
+    cardsCol.doc(key).update(patch);
+  }
+  function fbRemove(key){
+    if (!cardsCol) return;
+    cardsCol.doc(key).delete();
+  }
+  function requireFirebase(){
+    if (!fbReady){
+      toast("서버가 설정되지 않아 저장되지 않습니다 (사용가이드 참고)");
+      return false;
+    }
+    return true;
+  }
+
+  // ---------------- Toast (appended directly to <body> => stays local) ----------------
+  function toast(msg){
+    var t = document.createElement("div");
+    t.className = "toast";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){ t.classList.add("show"); });
+    setTimeout(function(){
+      t.classList.remove("show");
+      setTimeout(function(){ t.remove(); }, 300);
+    }, 2600);
+  }
+
+  // ---------------- Week header (derived / local display only) ----------------
+  function getMonday(d){
+    var day = d.getDay(); // 0 sun ... 6 sat
+    var diff = (day === 0 ? -6 : 1) - day;
+    var m = new Date(d);
+    m.setDate(d.getDate() + diff);
+    m.setHours(0,0,0,0);
+    return m;
+  }
+  function fmtMD(d){
+    return (d.getMonth()+1) + "/" + d.getDate();
+  }
+  var weekStart = getMonday(new Date());
+
+  // ---------------- Raw Data date-range state (filters by 배정일/assignedDate) ----------------
+  var rawRangeStart = getMonday(new Date());
+  var rawRangeEnd = new Date(rawRangeStart);
+  rawRangeEnd.setDate(rawRangeStart.getDate() + 5); // Mon–Sat of the current week, by default
+
+  function isSameDate(d1, d2){
+    return d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
+  }
+  function fmtDateKey(d){
+    return String(d.getFullYear()) + pad2(d.getMonth()+1) + pad2(d.getDate());
+  }
+  function dateForDayIndex(i){
+    var d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return fmtDateKey(d);
+  }
+  function dateForDay(dayKey){
+    return dateForDayIndex(DAYS.indexOf(dayKey));
+  }
+  function parseDateKey(s){
+    s = String(s || "");
+    if (s.length !== 8) return null;
+    var d = new Date(parseInt(s.slice(0,4),10), parseInt(s.slice(4,6),10)-1, parseInt(s.slice(6,8),10));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  // Move a scheduled card to the edge of the adjacent week — "이전주" jumps
+  // to last Saturday of the previous week, "다음주" jumps to next Monday —
+  // used by the quick-move buttons in the detail dialog so a card doesn't
+  // need to go via the unassigned tray. Writes the new assignedDate/order
+  // to Firebase; the resulting re-render places it in the right cell.
+  function shiftToWeekEdge(card, direction){
+    var cur = parseDateKey(card.dataset.assignedDate);
+    if (!cur) return false;
+    var monday = getMonday(cur);
+    var target = new Date(monday);
+    if (direction === "prev"){
+      target.setDate(monday.getDate() - 2); // Saturday of the previous week
+    } else {
+      target.setDate(monday.getDate() + 7); // Monday of the next week
+    }
+    fbUpdate(card.dataset.key, {assignedDate: fmtDateKey(target), order: Date.now()});
+    return true;
+  }
+
+  function renderWeekHeader(){
+    var end = new Date(weekStart);
+    end.setDate(weekStart.getDate() + 5);
+    weekRangeEl.textContent = fmtMD(weekStart) + " – " + fmtMD(end);
+    var now = new Date();
+    DAYS.forEach(function(dk, i){
+      var d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      var dayCol = grid.querySelector('.day-col[data-day="'+dk+'"]');
+      if (!dayCol) return;
+      var el = dayCol.querySelector(".day-date");
+      if (el) el.textContent = fmtMD(d) + " (" + DAY_LABEL[dk] + ")";
+      var isToday = isSameDate(d, now);
+      dayCol.classList.toggle("is-today", isToday);
+      var badge = dayCol.querySelector(".today-badge");
+      if (badge) badge.textContent = isToday ? "오늘" : "";
+    });
+    applyWeekFilter();
+  }
+
+  // ---------------- Week-based card visibility ----------------
+  // Each card placed on the schedule carries a real calendar date in
+  // dataset.assignedDate (YYYYMMDD). Navigating weeks changes which cards
+  // are shown in each day-column (per-viewer, via data-local-week-off) —
+  // the underlying assignedDate itself is shared/synced, only the "which
+  // week am I looking at" filter is local to each viewer.
+  function applyWeekFilter(){
+    DAYS.forEach(function(dk, i){
+      var targetDate = dateForDayIndex(i);
+      var cell = grid.querySelector('.cell[data-day="'+dk+'"]');
+      if (!cell) return;
+      Array.prototype.slice.call(cell.querySelectorAll(".card")).forEach(function(card){
+        if (card.dataset.assignedDate === targetDate) card.removeAttribute("data-local-week-off");
+        else card.setAttribute("data-local-week-off", "1");
+      });
+    });
+    updateDayCounts();
+  }
+  document.getElementById("prevWeek").addEventListener("click", function(){
+    weekStart.setDate(weekStart.getDate() - 7);
+    renderWeekHeader();
+  });
+  document.getElementById("nextWeek").addEventListener("click", function(){
+    weekStart.setDate(weekStart.getDate() + 7);
+    renderWeekHeader();
+  });
+  document.getElementById("thisWeek").addEventListener("click", function(){
+    weekStart = getMonday(new Date());
+    renderWeekHeader();
+  });
+  renderWeekHeader();
+
+  // ---------------- Number formatting ----------------
+  function numOr(v){
+    var n = parseFloat(String(v).replace(/,/g,""));
+    return isNaN(n) ? null : n;
+  }
+  function fmtWeight(v){
+    var n = numOr(v);
+    if (n === null) return "-";
+    return (Math.round(n*100)/100) + "T";
+  }
+  function fmtRoll(v){
+    var n = numOr(v);
+    if (n === null) return "-";
+    return (Math.round(n*100)/100) + "R";
+  }
+  function fmtFinalQty(v){
+    v = String(v || "").trim();
+    if (!v) return "";
+    return /[a-zA-Z가-힣]/.test(v) ? v : v + "R";
+  }
+  // strings stripped from 매출처/도착지/지종명 when displayed on cards & detail view
+  // longer/more specific terms must come before shorter terms they contain
+  // (e.g. "(주)지점" before "(주)") — otherwise the shorter one matches first
+  // and leaves a partial fragment (e.g. "지점") behind unstripped.
+  var STRIP_TERMS = ["(주)지점", "(주)", "주식회사", "FSC", "유한회사", "코퍼레이션"];
+  function cleanName(s){
+    s = String(s || "");
+    STRIP_TERMS.forEach(function(t){
+      s = s.split(t).join("");
+    });
+    return s.trim().replace(/\s{2,}/g, " ");
+  }
+  // truncate to 5 "counted" characters — "(" does not count toward the limit
+  function truncate5(s){
+    s = String(s || "");
+    var count = 0, out = "";
+    for (var i = 0; i < s.length; i++){
+      var ch = s[i];
+      if (ch !== "(") count++;
+      out += ch;
+      if (count >= 5) break;
+    }
+    return out;
+  }
+  function cardName(s){
+    return truncate5(cleanName(s));
+  }
+  function fmtDate8(s){
+    s = String(s || "").replace(/[^0-9]/g, "");
+    if (s.length === 8) return s.slice(4,6) + "/" + s.slice(6,8);
+    // try YYYY-MM-DD etc already stripped; fallback
+    return s || "-";
+  }
+  function fmtDateFull(s){
+    s = String(s || "").replace(/[^0-9]/g, "");
+    if (s.length === 8) return s.slice(0,4)+"-"+s.slice(4,6)+"-"+s.slice(6,8);
+    return s || "-";
+  }
+  var WEEKDAY_KR = ["일","월","화","수","목","금","토"];
+  function fmtDateWithDay(s){
+    s = String(s || "").replace(/[^0-9]/g, "");
+    if (s.length !== 8) return s || "-";
+    var d = new Date(parseInt(s.slice(0,4),10), parseInt(s.slice(4,6),10)-1, parseInt(s.slice(6,8),10));
+    return (d.getMonth()+1) + "/" + d.getDate() + " (" + WEEKDAY_KR[d.getDay()] + ")";
+  }
+  function snapTo10Min(t){
+    if (!t) return "";
+    var parts = t.split(":");
+    var h = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return t;
+    m = Math.round(m / 10) * 10;
+    if (m === 60){ m = 0; h = (h + 1) % 24; }
+    return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+  }
+  // ---- 10-minute time selects (native <select>, values are never synced) ----
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function initTimeSelect(prefix){
+    var hSel = document.getElementById(prefix+"H");
+    var mSel = document.getElementById(prefix+"M");
+    if (!hSel || !mSel) return;
+    var blankH = document.createElement("option");
+    blankH.value = ""; blankH.textContent = "--";
+    hSel.appendChild(blankH);
+    for (var h=6; h<24; h++){
+      var o = document.createElement("option");
+      o.value = pad2(h); o.textContent = pad2(h);
+      hSel.appendChild(o);
+    }
+    var blankM = document.createElement("option");
+    blankM.value = ""; blankM.textContent = "--";
+    mSel.appendChild(blankM);
+    for (var m=0; m<60; m+=10){
+      var om = document.createElement("option");
+      om.value = pad2(m); om.textContent = pad2(m);
+      mSel.appendChild(om);
+    }
+  }
+  ["fStart","fEnd"].forEach(initTimeSelect);
+  function setTimeSelects(prefix, hhmm){
+    var parts = String(hhmm||"").split(":");
+    var h = parts[0] ? pad2(parseInt(parts[0],10)||0) : "";
+    var m = parts[1] ? pad2(Math.round((parseInt(parts[1],10)||0)/10)*10 % 60) : (h ? "00" : "");
+    document.getElementById(prefix+"H").value = h;
+    document.getElementById(prefix+"M").value = m;
+  }
+  function getTimeSelects(prefix){
+    var h = document.getElementById(prefix+"H").value;
+    var m = document.getElementById(prefix+"M").value;
+    if (!h) return "";
+    return h + ":" + (m || "00");
+  }
+  function dims(w,h){
+    var wn = numOr(w), hn = numOr(h);
+    if (wn && hn) return wn + "×" + hn;
+    if (wn) return wn + "폭";
+    if (hn) return hn;
+    return "-";
+  }
+
+  // ---------------- Card creation / update ----------------
+  function statusFromRaw(raw){
+    raw = (raw||"").trim();
+    if (raw === "컨버팅완료" || raw === "완료") return "done";
+    if (raw === "보류") return "hold";
+    if (raw === "작업중" || raw === "진행중" || raw === "컨버팅중") return "wip";
+    return "planned";
+  }
+
+  var BASE_FIELDS = ["date","due","buyer","arrival","supplier","warehouse",
+    "makerIn","paperIn","basisIn","wIn","hIn","needQty","needWt",
+    "makerOut","paperOut","basisOut","wOut","hOut","planQty","planWt",
+    "note","rawstatus","registrant","registeredAt"];
+
+  // Build a fresh Firebase record for a newly-imported card (paste import only).
+  function newCardData(rec){
+    var data = {key: rec.key, assignedDate: "", cardstatus: statusFromRaw(rec.rawstatus),
+      start: "", end: "", finalqty: "", lot: "", closer: "", memo: "", order: 0};
+    BASE_FIELDS.forEach(function(k){ if (rec[k] !== undefined) data[k] = rec[k]; });
+    return data;
+  }
+  // Subset of fields updated when a paste re-import matches an existing key
+  // (leaves cardstatus/lot/start/end/etc — the on-floor progress — untouched).
+  function baseFieldPatch(rec){
+    var patch = {};
+    BASE_FIELDS.forEach(function(k){ if (rec[k] !== undefined) patch[k] = rec[k]; });
+    return patch;
+  }
+
+  // Build a DOM card element purely as a render of a Firebase data object —
+  // this is the ONLY place `.card` elements are created; renderAll() is the
+  // only place this is called from.
+  function buildCardEl(data){
+    var card = document.createElement("div");
+    card.className = "card";
+    card.setAttribute("draggable", "true");
+    card.tabIndex = 0;
+    Object.keys(data).forEach(function(k){
+      if (data[k] !== undefined && data[k] !== null) card.dataset[k] = data[k];
+    });
+    if (!card.dataset.cardstatus) card.dataset.cardstatus = statusFromRaw(card.dataset.rawstatus);
+    renderCardBody(card);
+    return card;
+  }
+
+  function renderCardBody(card){
+    var d = card.dataset;
+    var badge = "";
+    if (d.cardstatus === "wip") badge = '<span class="card-badge badge-wip">작업중</span>';
+    else if (d.cardstatus === "hold") badge = '<span class="card-badge badge-hold">보류</span>';
+    else if (d.cardstatus === "done") badge = '<span class="card-badge badge-done">완료</span>';
+    var line1 = '<div class="card-line1">'+escapeHtml(cardName(d.buyer)||"-")+' · '+fmtDate8(d.due)+'</div>';
+    var line2 = '<div class="card-line2">'+escapeHtml(cleanName(d.paperIn)||"-")+" "+escapeHtml(d.basisIn||"-")+"g · "+dims(d.wIn,d.hIn)+" · "+fmtWeight(d.needWt)+'</div>';
+    var line3 = '<div class="card-line3">'+dims(d.wOut,d.hOut)+" · "+fmtRoll(d.planQty)+'</div>';
+    // the extra time line only appears for 작업중/완료 cards (both get the
+    // same fixed height), 작업예정/보류 keep the original 3-line height
+    var line4 = "";
+    if (d.cardstatus === "done"){
+      var timeStr = (d.start||"?")+"–"+(d.end||"?");
+      var finalTxt = fmtFinalQty(d.finalqty);
+      line4 = '<div class="card-time">⏱ '+timeStr+(finalTxt ? " · "+escapeHtml(finalTxt) : "")+'</div>';
+    } else if (d.cardstatus === "wip"){
+      line4 = '<div class="card-time">⏱ '+(d.start||"?")+'~ 작업중</div>';
+    }
+    card.innerHTML = badge + line1 + line2 + line3 + line4;
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
+
+  var WEEKDAY_TO_KEY = {1:"mon", 2:"tue", 3:"wed", 4:"thu", 5:"fri", 6:"sat"};
+
+  // ---------------- renderAll(): rebuild the whole board from cardsState ----------------
+  // This is the single place `.card` DOM nodes get (re)created. It runs every
+  // time the Firebase `/cards` snapshot changes (our own writes included —
+  // they round-trip back through the listener) so the DOM is always just a
+  // render of cardsState, never a second source of truth.
+  var trayWasEmpty = true;
+  function renderAll(){
+    // remember which card the detail dialog has open, so we can re-point
+    // currentCard at the freshly-built node instead of a now-removed one
+    var openKey = (detailDialog && detailDialog.open && currentCard) ? currentCard.dataset.key : null;
+
+    Array.prototype.slice.call(grid.querySelectorAll(".card")).forEach(function(c){ c.remove(); });
+    Array.prototype.slice.call(unassigned.querySelectorAll(".card")).forEach(function(c){ c.remove(); });
+
+    var trayCards = [];
+    var byDay = {mon:[], tue:[], wed:[], thu:[], fri:[], sat:[]};
+
+    Object.keys(cardsState).forEach(function(key){
+      var data = cardsState[key];
+      if (!data) return;
+      data = Object.assign({}, data, {key: key});
+      var ad = data.assignedDate;
+      if (!ad){
+        trayCards.push(data);
+        return;
+      }
+      var parsed = parseDateKey(ad);
+      var dayKey = parsed ? WEEKDAY_TO_KEY[parsed.getDay()] : null;
+      if (!dayKey){ trayCards.push(data); return; } // e.g. landed on a Sunday date — treat as unassigned
+      byDay[dayKey].push(data);
+    });
+
+    // tray: always ordered by registration order (creation order), regardless
+    // of where a card is dropped back into the tray
+    trayCards.sort(function(a,b){ return String(a.registeredAt||"").localeCompare(String(b.registeredAt||"")); });
+    trayCards.forEach(function(data){ unassigned.appendChild(buildCardEl(data)); });
+
+    // day cells: ordered by the `order` field (fractional index maintained on drag/drop)
+    DAYS.forEach(function(dk){
+      var cell = grid.querySelector('.cell[data-day="'+dk+'"]');
+      if (!cell) return;
+      byDay[dk].sort(function(a,b){ return (numOr(a.order)||0) - (numOr(b.order)||0); });
+      byDay[dk].forEach(function(data){ cell.appendChild(buildCardEl(data)); });
+    });
+
+    if (openKey){
+      var reopened = document.querySelector('.card[data-key="'+cssEscape(openKey)+'"]');
+      currentCard = reopened || null;
+      if (!reopened) detailDialog.close(); // card was deleted elsewhere while open
+    }
+
+    refreshTrayChrome();
+    applyWeekFilter();
+    updateDayCounts();
+    reapplyLocalFilters();
+    renderRawData();
+  }
+
+  function refreshTrayChrome(){
+    var hasCards = unassigned.querySelector(".card");
+    trayEmptyHint.style.display = hasCards ? "none" : "block";
+    var count = unassigned.querySelectorAll(".card").length;
+    trayCount.textContent = count + "건";
+    // an empty tray has nothing to show, so keep it collapsed and disable
+    // the toggle until a card lands in it again. When a card lands in a
+    // previously-empty tray (e.g. dragged in from the schedule), auto-expand
+    // once so it's immediately visible.
+    if (trayWrap){
+      if (!hasCards){
+        trayWrap.setAttribute("data-local-collapsed", "1");
+        if (trayToggle){ trayToggle.disabled = true; trayToggle.lastChild.textContent = "펼치기"; }
+        trayWasEmpty = true;
+      } else {
+        if (trayToggle) trayToggle.disabled = false;
+        if (trayWasEmpty){
+          trayWrap.removeAttribute("data-local-collapsed");
+          if (trayToggle) trayToggle.lastChild.textContent = "접기";
+        }
+        trayWasEmpty = false;
+      }
+    }
+  }
+
+  // re-apply the per-viewer search / "완료 카드 숨기기" filters after a full
+  // re-render wipes the data-local-hidden attributes those set
+  function reapplyLocalFilters(){
+    var q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+    var hideDone = document.getElementById("hideDone").checked;
+    document.querySelectorAll(".card").forEach(function(card){
+      var hay = (
+        card.dataset.buyer + " " +
+        (card.dataset.basisIn||"") + " " + (card.dataset.basisOut||"") + " " +
+        cleanName(card.dataset.paperIn) + " " + cleanName(card.dataset.paperOut) + " " +
+        (card.dataset.registrant||"")
+      ).toLowerCase();
+      var hiddenBySearch = q && hay.indexOf(q) === -1;
+      var hiddenByDone = hideDone && card.dataset.cardstatus === "done";
+      if (hiddenBySearch || hiddenByDone) card.setAttribute("data-local-hidden", "1");
+      else card.removeAttribute("data-local-hidden");
+    });
+  }
+
+  function updateDayCounts(){
+    DAYS.forEach(function(dk){
+      var cards = Array.prototype.slice.call(grid.querySelectorAll('.cell[data-day="'+dk+'"] .card:not([data-local-week-off])'));
+      var el = grid.querySelector('.day-col[data-day="'+dk+'"] .day-count');
+      if (el) el.textContent = cards.length ? (cards.length + "건") : "";
+
+      var sumDone = 0, sumPlanned = 0;
+      cards.forEach(function(card){
+        var n = numOr(card.dataset.needWt) || 0;
+        if (card.dataset.cardstatus === "done") sumDone += n;
+        else if (card.dataset.cardstatus === "planned" || card.dataset.cardstatus === "wip") sumPlanned += n;
+      });
+      var doneEl = grid.querySelector('.day-col[data-day="'+dk+'"] .day-sum-done');
+      var plannedEl = grid.querySelector('.day-col[data-day="'+dk+'"] .day-sum-planned');
+      if (doneEl) doneEl.textContent = (Math.round(sumDone*100)/100) + "T";
+      if (plannedEl) plannedEl.textContent = (Math.round(sumPlanned*100)/100) + "T";
+    });
+  }
+
+  // ---------------- Paste parsing ----------------
+  var COLS = ["date","supplier","warehouse","makerIn","paperIn","basisIn","wIn","hIn","needQty","needWt",
+    "due","buyer","arrival","makerOut","paperOut","basisOut","wOut","hOut","planQty","planWt",
+    "note","rawstatus","registrant","registeredAt"];
+
+  function looksLikeHeaderCell(v){
+    return /[가-힣]/.test(v) && !/^[0-9./-]+$/.test(v);
+  }
+
+  function parsePasted(text){
+    var lines = text.split(/\r\n|\n|\r/).filter(function(l){ return l.trim().length > 0; });
+    var records = [];
+    var errors = 0;
+    lines.forEach(function(line){
+      var cells = line.split("\t").map(function(c){ return c.trim(); });
+      if (cells.length < 20){ errors++; return; }
+      // skip header row: first cell isn't a plausible date
+      var first = cells[0].replace(/[^0-9]/g,"");
+      if (first.length < 8 && looksLikeHeaderCell(cells[0])){ return; }
+      var rec = {};
+      COLS.forEach(function(name, idx){ rec[name] = cells[idx] !== undefined ? cells[idx] : ""; });
+      rec.date = rec.date.replace(/[^0-9]/g, "").slice(0,8);
+      rec.due = rec.due.replace(/[^0-9]/g, "").slice(0,8);
+      if (rec.date.length !== 8){ errors++; return; }
+      var rawKey = rec.registeredAt && rec.registeredAt.length > 3
+        ? rec.registeredAt
+        : (rec.date+"|"+rec.buyer+"|"+rec.arrival+"|"+rec.note).slice(0,120);
+      // Firestore document IDs can't contain "/" — sanitize before using as a doc id
+      rec.key = String(rawKey).replace(/\//g, "_").trim() || ("card_"+rec.date+"_"+records.length);
+      records.push(rec);
+    });
+    return {records: records, errors: errors};
+  }
+
+  function importRecords(records){
+    var added = 0, updated = 0;
+    records.forEach(function(rec){
+      if (cardsState[rec.key]){
+        fbUpdate(rec.key, baseFieldPatch(rec));
+        updated++;
+      } else {
+        fbSet(rec.key, newCardData(rec));
+        added++;
+      }
+    });
+    // no local render call here — the /cards listener echoes these writes
+    // straight back and renderAll() picks them up
+    return {added: added, updated: updated};
+  }
+
+  function cssEscape(s){
+    return String(s).replace(/["\\]/g, "\\$&");
+  }
+
+  // ---------------- Paste dialog wiring ----------------
+  var pasteDialog = document.getElementById("pasteDialog");
+  var pasteArea = document.getElementById("pasteArea");
+  document.getElementById("openPaste").addEventListener("click", function(){
+    pasteArea.value = "";
+    pasteDialog.showModal();
+    setTimeout(function(){ pasteArea.focus(); }, 30);
+  });
+  document.getElementById("pasteCancel").addEventListener("click", function(){ pasteDialog.close(); });
+  document.getElementById("pasteSubmit").addEventListener("click", function(){
+    if (!requireFirebase()){ pasteDialog.close(); return; }
+    var text = pasteArea.value;
+    if (!text.trim()){ pasteDialog.close(); return; }
+    var parsed = parsePasted(text);
+    var result = importRecords(parsed.records);
+    pasteDialog.close();
+    var msg = result.added + "건 추가, " + result.updated + "건 갱신";
+    if (parsed.errors) msg += ", " + parsed.errors + "건 인식 실패";
+    toast(msg);
+  });
+
+  // ---------------- Drag & drop ----------------
+  var dragKey = null;
+
+  document.addEventListener("dragstart", function(e){
+    var card = e.target.closest(".card");
+    if (!card) return;
+    dragKey = card.dataset.key;
+    e.dataTransfer.setData("text/plain", dragKey);
+    e.dataTransfer.effectAllowed = "move";
+  });
+
+  // the tray container itself is a valid drop target even when the tray is
+  // collapsed/empty (its inner #unassigned is display:none then, so the
+  // still-visible tray-wrap header has to catch the drop instead)
+  function findDropContainer(target){
+    return target.closest(".cell") || target.closest("#unassigned") || target.closest(".tray-wrap");
+  }
+  function isTrayContainer(container){
+    return container.id === "unassigned" || container.classList.contains("tray-wrap");
+  }
+  function dropMarker(container){
+    if (container.classList.contains("cell")) return container;
+    if (isTrayContainer(container)) return container;
+    return null;
+  }
+  function getDropInsertionTarget(container, clientY, dragCard){
+    var cards = Array.prototype.slice.call(container.children).filter(function(el){
+      return el.classList && el.classList.contains("card") && el !== dragCard;
+    });
+    for (var i = 0; i < cards.length; i++){
+      var rect = cards[i].getBoundingClientRect();
+      var mid = rect.top + rect.height / 2;
+      if (clientY < mid) return cards[i];
+    }
+    return null;
+  }
+
+  document.addEventListener("dragover", function(e){
+    var container = findDropContainer(e.target);
+    if (!container) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    var marker = dropMarker(container);
+    document.querySelectorAll(".local-dragover").forEach(function(el){
+      if (el !== marker) el.classList.remove("local-dragover");
+    });
+    if (marker) marker.classList.add("local-dragover");
+  });
+
+  document.addEventListener("dragleave", function(e){
+    var marker = e.target.closest(".cell") || e.target.closest("#unassigned") || e.target.closest(".tray-wrap");
+    if (marker && !marker.contains(e.relatedTarget)) marker.classList.remove("local-dragover");
+  });
+
+  // fractional-index ordering: the new order value sits strictly between the
+  // sibling before and after the drop point, so inserting between two cards
+  // never requires renumbering the whole column
+  function computeOrderAt(container, clientY, dragCard){
+    var siblings = Array.prototype.slice.call(container.children).filter(function(el){
+      return el.classList && el.classList.contains("card") && el !== dragCard;
+    });
+    var target = getDropInsertionTarget(container, clientY, dragCard);
+    var idx = target ? siblings.indexOf(target) : siblings.length;
+    var prevOrder = idx > 0 ? (numOr(siblings[idx-1].dataset.order) || 0) : 0;
+    var nextOrder = target ? (numOr(target.dataset.order) || (prevOrder + 2)) : (prevOrder + 2);
+    if (nextOrder <= prevOrder) nextOrder = prevOrder + 2;
+    return (prevOrder + nextOrder) / 2;
+  }
+
+  document.addEventListener("drop", function(e){
+    var container = findDropContainer(e.target);
+    if (!container) return;
+    e.preventDefault();
+    document.querySelectorAll(".local-dragover").forEach(function(el){ el.classList.remove("local-dragover"); });
+    var key = e.dataTransfer.getData("text/plain") || dragKey;
+    dragKey = null;
+    if (!key || !requireFirebase()) return;
+    var card = document.querySelector('.card[data-key="'+cssEscape(key)+'"]');
+    if (!card) return;
+    if (isTrayContainer(container)){
+      if (card.dataset.cardstatus === "done"){
+        toast("완료된 카드는 미배정으로 옮길 수 없습니다");
+        return;
+      }
+      fbUpdate(key, {assignedDate: ""});
+    } else {
+      var dayCol = container.closest(".day-col");
+      var assignedDate = dayCol ? dateForDay(dayCol.dataset.day) : card.dataset.assignedDate;
+      var order = computeOrderAt(container, e.clientY, card);
+      fbUpdate(key, {assignedDate: assignedDate, order: order});
+    }
+  });
+
+  // ---------------- Detail dialog ----------------
+  var detailDialog = document.getElementById("detailDialog");
+  var currentCard = null;
+
+  function openDetail(card){
+    currentCard = card;
+    var d = card.dataset;
+    document.getElementById("dBuyer").textContent = d.buyer || "-";
+    document.getElementById("dArrival").textContent = d.arrival || "-";
+    document.getElementById("dDue").textContent = fmtDateFull(d.due);
+    document.getElementById("dDate").textContent = fmtDateFull(d.date);
+    document.getElementById("dWarehouse").textContent = d.warehouse || "-";
+    document.getElementById("dNeedPaper").textContent = d.paperIn || "-";
+    document.getElementById("dNeedBasis").textContent = d.basisIn ? d.basisIn+"g" : "-";
+    document.getElementById("dNeedW").textContent = numOr(d.wIn) ? numOr(d.wIn) : "-";
+    document.getElementById("dNeedH").textContent = numOr(d.hIn) ? numOr(d.hIn) : "-";
+    document.getElementById("dNeedQty").textContent = fmtWeight(d.needWt);
+    document.getElementById("dPlanPaper").textContent = d.paperOut || "-";
+    document.getElementById("dPlanBasis").textContent = d.basisOut ? d.basisOut+"g" : "-";
+    document.getElementById("dPlanW").textContent = numOr(d.wOut) ? numOr(d.wOut) : "-";
+    document.getElementById("dPlanH").textContent = numOr(d.hOut) ? numOr(d.hOut) : "-";
+    document.getElementById("dPlanQty").textContent = fmtRoll(d.planQty);
+    document.getElementById("dNote").textContent = d.note || "-";
+    document.getElementById("dReg").textContent = d.registrant || "-";
+
+    var pill = document.getElementById("detailStatusPill");
+    var st = d.cardstatus || "planned";
+    pill.textContent = STATUS_LABEL[st] || "작업예정";
+    pill.style.background = "var(--"+st+"-bg)";
+    pill.style.color = "var(--"+st+"-text)";
+    pill.style.border = "1px solid var(--"+st+"-border)";
+
+    document.getElementById("fStatus").value = st;
+    document.getElementById("fLot").value = d.lot || "";
+    setTimeSelects("fStart", d.start || "");
+    setTimeSelects("fEnd", d.end || "");
+    document.getElementById("fFinalQty").value = d.finalqty || "";
+    document.getElementById("fCloser").value = d.closer || "";
+    document.getElementById("fMemo").value = d.memo || "";
+
+    var delBtn = document.getElementById("deleteCard");
+    delBtn.classList.remove("confirming");
+    delBtn.textContent = "카드 삭제";
+    delBtn.dataset.armed = "0";
+
+    // week-shift quick-move buttons only make sense for cards already placed
+    // on the schedule (they carry an assignedDate) — tray cards have none.
+    var scheduled = !!d.assignedDate;
+    document.getElementById("shiftPrevWeek").style.display = scheduled ? "" : "none";
+    document.getElementById("shiftNextWeek").style.display = scheduled ? "" : "none";
+
+    detailDialog.showModal();
+  }
+
+  grid.addEventListener("click", function(e){
+    var card = e.target.closest(".card");
+    if (card) openDetail(card);
+  });
+  unassigned.addEventListener("click", function(e){
+    var card = e.target.closest(".card");
+    if (card) openDetail(card);
+  });
+
+  document.getElementById("detailCancel").addEventListener("click", function(){ detailDialog.close(); });
+
+  document.getElementById("shiftPrevWeek").addEventListener("click", function(){
+    if (!currentCard || !requireFirebase() || !shiftToWeekEdge(currentCard, "prev")) return;
+    detailDialog.close();
+    toast("이전주 토요일로 이동했습니다");
+  });
+  document.getElementById("shiftNextWeek").addEventListener("click", function(){
+    if (!currentCard || !requireFirebase() || !shiftToWeekEdge(currentCard, "next")) return;
+    detailDialog.close();
+    toast("다음주 월요일로 이동했습니다");
+  });
+
+  function flashInvalid(ids){
+    ids.forEach(function(id){
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.classList.add("field-invalid");
+      setTimeout(function(){ el.classList.remove("field-invalid"); }, 1800);
+    });
+  }
+
+  document.getElementById("detailSave").addEventListener("click", function(){
+    if (!currentCard || !requireFirebase()) return;
+    var status = document.getElementById("fStatus").value;
+    var lot = document.getElementById("fLot").value.trim();
+    var start = getTimeSelects("fStart");
+    var end = getTimeSelects("fEnd");
+    var finalqty = document.getElementById("fFinalQty").value.trim();
+    var closer = document.getElementById("fCloser").value.trim();
+    var memo = document.getElementById("fMemo").value;
+
+    var missingLabels = [];
+    var missingIds = [];
+    if (status === "wip" || status === "done"){
+      if (!lot){ missingLabels.push("LOT 정보"); missingIds.push("fLot"); }
+      if (!start){ missingLabels.push("시작시간"); missingIds.push("fStartH"); }
+    }
+    if (status === "done"){
+      if (!end){ missingLabels.push("종료시간"); missingIds.push("fEndH"); }
+      if (!finalqty){ missingLabels.push("최종 생산수량 R"); missingIds.push("fFinalQty"); }
+      if (!closer){ missingLabels.push("담당자"); missingIds.push("fCloser"); }
+    }
+    if (missingLabels.length){
+      toast((status === "done" ? "완료" : "작업중") + " 상태로 저장하려면 입력하세요: " + missingLabels.join(", "));
+      flashInvalid(missingIds);
+      return;
+    }
+
+    fbUpdate(currentCard.dataset.key, {
+      cardstatus: status, lot: lot, start: start, end: end,
+      finalqty: finalqty, closer: closer, memo: memo
+    });
+    detailDialog.close();
+    toast("저장되었습니다");
+  });
+
+  document.getElementById("deleteCard").addEventListener("click", function(e){
+    var btn = e.currentTarget;
+    if (btn.dataset.armed !== "1"){
+      btn.dataset.armed = "1";
+      btn.classList.add("confirming");
+      btn.textContent = "정말 삭제할까요? 다시 클릭";
+      setTimeout(function(){
+        if (btn.dataset.armed === "1"){
+          btn.dataset.armed = "0";
+          btn.classList.remove("confirming");
+          btn.textContent = "카드 삭제";
+        }
+      }, 3000);
+      return;
+    }
+    if (currentCard && requireFirebase()) fbRemove(currentCard.dataset.key);
+    detailDialog.close();
+    toast("카드를 삭제했습니다");
+  });
+
+  // ---------------- View tabs (per-viewer only, via data-local-view) ----------------
+  var appEl = document.getElementById("app");
+  function setTopControlsDisabled(disabled){
+    ["prevWeek","thisWeek","nextWeek","searchInput","openPaste"].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.disabled = disabled;
+    });
+  }
+  document.getElementById("tabBoard").addEventListener("click", function(){
+    appEl.setAttribute("data-local-view", "board");
+    setTopControlsDisabled(false);
+  });
+  document.getElementById("tabRaw").addEventListener("click", function(){
+    appEl.setAttribute("data-local-view", "raw");
+    setTopControlsDisabled(true);
+    renderRawData();
+  });
+
+  // ---------------- Raw Data date-range search (filters by 배정일/assignedDate) ----------------
+  // start/end are plain native <input type="date"> fields so the full
+  // year/month/day can be edited at once (typed or via the native picker).
+  function toISODate(d){
+    return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
+  }
+  function parseISODate(s){
+    var parts = String(s||"").split("-");
+    if (parts.length !== 3) return null;
+    var y = parseInt(parts[0],10), m = parseInt(parts[1],10), d = parseInt(parts[2],10);
+    if (!y || !m || !d) return null;
+    var dt = new Date(y, m-1, d);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+  function syncRawRangeInputs(){
+    document.getElementById("rawStartDate").value = toISODate(rawRangeStart);
+    document.getElementById("rawEndDate").value = toISODate(rawRangeEnd);
+  }
+  syncRawRangeInputs();
+
+  document.getElementById("rawPrevWeek").addEventListener("click", function(){
+    rawRangeStart.setDate(rawRangeStart.getDate() - 7);
+    rawRangeEnd.setDate(rawRangeEnd.getDate() - 7);
+    syncRawRangeInputs();
+    renderRawData();
+  });
+  document.getElementById("rawNextWeek").addEventListener("click", function(){
+    rawRangeStart.setDate(rawRangeStart.getDate() + 7);
+    rawRangeEnd.setDate(rawRangeEnd.getDate() + 7);
+    syncRawRangeInputs();
+    renderRawData();
+  });
+  document.getElementById("rawApplyRange").addEventListener("click", function(){
+    var start = parseISODate(document.getElementById("rawStartDate").value);
+    var end = parseISODate(document.getElementById("rawEndDate").value);
+    if (!start || !end){ toast("시작일과 종료일을 모두 선택하세요"); return; }
+    if (end < start){ var t = start; start = end; end = t; }
+    var spanDays = Math.round((end - start) / 86400000);
+    if (spanDays > 30){
+      end = new Date(start);
+      end.setDate(start.getDate() + 30);
+      toast("최대 31일까지만 검색할 수 있어 종료일을 조정했습니다");
+    }
+    rawRangeStart = start;
+    rawRangeEnd = end;
+    syncRawRangeInputs();
+    renderRawData();
+  });
+
+  // ---------------- Raw Data table (derived read-model, filtered by date range) ----------------
+  var rawDataBody = document.getElementById("rawDataBody");
+  var rawDataCount = document.getElementById("rawDataCount");
+  function rd(v){ return v ? escapeHtml(v) : ""; }
+  function rdNum(v, suffix){
+    var n = numOr(v);
+    if (n === null) return "";
+    return (Math.round(n*100)/100) + (suffix || "");
+  }
+  function renderRawData(){
+    if (!rawDataBody) return;
+    var startKey = fmtDateKey(rawRangeStart);
+    var endKey = fmtDateKey(rawRangeEnd);
+    var cards = Array.prototype.slice.call(document.querySelectorAll(".card")).filter(function(card){
+      var ad = card.dataset.assignedDate;
+      return ad && ad >= startKey && ad <= endKey;
+    });
+    cards.sort(function(a,b){ return String(a.dataset.registeredAt||"").localeCompare(String(b.dataset.registeredAt||"")); });
+    if (!cards.length){
+      rawDataBody.innerHTML = '<tr><td class="rd-empty" colspan="33">선택한 기간에 배정된 카드가 없습니다.</td></tr>';
+    } else {
+      rawDataBody.innerHTML = cards.map(function(card, idx){
+        var d = card.dataset;
+        var assigned = d.assignedDate ? fmtDateWithDay(d.assignedDate) : "";
+        return "<tr>"
+          + "<td>" + (idx+1) + "</td>"
+          + "<td>" + (d.date ? fmtDateFull(d.date) : "") + "</td>"
+          + "<td>" + rd(d.supplier) + "</td>"
+          + "<td>" + rd(d.warehouse) + "</td>"
+          + "<td>" + rd(d.makerIn) + "</td>"
+          + "<td>" + rd(d.paperIn) + "</td>"
+          + "<td>" + rd(d.basisIn) + "</td>"
+          + "<td>" + rdNum(d.wIn) + "</td>"
+          + "<td>" + rdNum(d.hIn) + "</td>"
+          + "<td>" + rdNum(d.needQty) + "</td>"
+          + "<td>" + rdNum(d.needWt, "T") + "</td>"
+          + "<td>" + (d.due ? fmtDateFull(d.due) : "") + "</td>"
+          + "<td>" + rd(d.buyer) + "</td>"
+          + "<td>" + rd(d.arrival) + "</td>"
+          + "<td>" + rd(d.makerOut) + "</td>"
+          + "<td>" + rd(d.paperOut) + "</td>"
+          + "<td>" + rd(d.basisOut) + "</td>"
+          + "<td>" + rdNum(d.wOut) + "</td>"
+          + "<td>" + rdNum(d.hOut) + "</td>"
+          + "<td>" + rdNum(d.planQty, "R") + "</td>"
+          + "<td>" + rdNum(d.planWt) + "</td>"
+          + "<td class=\"rd-note\">" + rd(d.note) + "</td>"
+          + "<td>" + rd(d.rawstatus) + "</td>"
+          + "<td>" + rd(d.registrant) + "</td>"
+          + "<td>" + rd(d.registeredAt) + "</td>"
+          + "<td>" + assigned + "</td>"
+          + "<td>" + (STATUS_LABEL[d.cardstatus] || "작업예정") + "</td>"
+          + "<td>" + rd(d.lot) + "</td>"
+          + "<td>" + rd(d.start) + "</td>"
+          + "<td>" + rd(d.end) + "</td>"
+          + "<td>" + rd(fmtFinalQty(d.finalqty)) + "</td>"
+          + "<td>" + rd(d.closer) + "</td>"
+          + "<td class=\"rd-note\">" + rd(d.memo) + "</td>"
+          + "</tr>";
+      }).join("");
+    }
+    if (rawDataCount) rawDataCount.textContent = cards.length + "건";
+  }
+
+  // ---------------- Search / filter (local-only via data-local-hidden) ----------------
+  // Searches only 매출처(buyer) · 평량(basis weight) · 지종(paper name) · 등록자
+  // (registrant). Paper names are matched against the STRIP_TERMS-cleaned
+  // name (same text shown on the card) so a search like "SC" doesn't
+  // false-match "FSC" in the raw 지종명 — cleanName() removes "FSC" etc.
+  // before the comparison happens.
+  document.getElementById("searchInput").addEventListener("input", reapplyLocalFilters);
+  document.getElementById("hideDone").addEventListener("change", reapplyLocalFilters);
+
+  // ---------------- Tray collapse (per-viewer only, via data-local-*) ----------------
+  var trayWrap = document.getElementById("trayWrap");
+  var trayToggle = document.getElementById("trayToggle");
+  trayToggle.addEventListener("click", function(){
+    if (!unassigned.querySelector(".card")) return; // nothing to show while empty — stay collapsed
+    var collapsed = trayWrap.getAttribute("data-local-collapsed") === "1";
+    if (collapsed){
+      trayWrap.removeAttribute("data-local-collapsed");
+      trayToggle.lastChild.textContent = "접기";
+    } else {
+      trayWrap.setAttribute("data-local-collapsed", "1");
+      trayToggle.lastChild.textContent = "펼치기";
+    }
+  });
+
+  // ---------------- Clean Excel copy/paste from the Raw Data table ----------------
+  // The on-screen table uses theme colors (which can be a light gray in dark
+  // mode) and cell borders for its own readability. When pasted into Excel
+  // those come across verbatim, so intercept the copy and rebuild the
+  // selected cells with plain black text and no borders/backgrounds.
+  var rawDataWrap = document.getElementById("rawDataWrap");
+  if (rawDataWrap){
+    rawDataWrap.addEventListener("copy", function(e){
+      var sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+      var frag = sel.getRangeAt(0).cloneContents();
+      var holder = document.createElement("div");
+      holder.appendChild(frag);
+      holder.querySelectorAll("td, th").forEach(function(c){
+        c.removeAttribute("class");
+        c.setAttribute("style", "color:#000000; background:#ffffff; border:none; font-weight:normal;");
+      });
+      holder.querySelectorAll("table, thead, tbody, tr").forEach(function(el){
+        el.removeAttribute("class");
+        el.setAttribute("style", "border:none; border-collapse:collapse;");
+      });
+      var rows = holder.querySelectorAll("tr");
+      var plain;
+      if (rows.length){
+        plain = Array.prototype.map.call(rows, function(tr){
+          return Array.prototype.map.call(tr.querySelectorAll("td,th"), function(c){ return c.textContent.trim(); }).join("\t");
+        }).join("\n");
+      } else {
+        plain = Array.prototype.map.call(holder.querySelectorAll("td,th"), function(c){ return c.textContent.trim(); }).join("\t");
+      }
+      var html = holder.innerHTML;
+      if (!/<table/i.test(html)) html = '<table style="border:none; border-collapse:collapse;"><tr>' + html + '</tr></table>';
+      if (e.clipboardData){
+        e.clipboardData.setData("text/plain", plain);
+        e.clipboardData.setData("text/html", html);
+        e.preventDefault();
+      }
+    });
+  }
+
+  // ---------------- Start realtime sync ----------------
+  initFirebase();
+  refreshTrayChrome();
+})();
+</script>
