@@ -42,6 +42,8 @@
 
     --drop:#fbefc9;
     --lot-total-color:#d81e0f;
+    --input-sky-bg:#e4f3fb;
+    --input-sky-border:#a9d6ec;
 
     /* 85% of the original "카드 생성" button height (~34px), shared by the
        week-nav / search-box / 카드생성 controls and the view tabs above them */
@@ -80,6 +82,8 @@
 
       --drop:#4a3f1c;
       --lot-total-color:#ff6b57;
+      --input-sky-bg:#1d3040;
+      --input-sky-border:#3f688a;
       color-scheme: dark;
     }
   }
@@ -113,6 +117,8 @@
 
     --drop:#4a3f1c;
     --lot-total-color:#ff6b57;
+    --input-sky-bg:#1d3040;
+    --input-sky-border:#3f688a;
     color-scheme: dark;
   }
 
@@ -823,18 +829,18 @@
     margin-bottom:10px;
   }
   .field-col{display:flex; flex-direction:column; gap:10px;}
-  .lot-col-labels{display:flex; align-items:center; gap:5px; margin-bottom:2px;}
-  .lot-col-labels span{font-size:0.72rem; color:var(--ink-soft); font-weight:600;}
-  .lot-col-labels .lot-col-name{flex:1; min-width:0;}
-  .lot-col-labels .lot-col-qty{flex:none; width:52px;}
-  .lot-col-labels .lot-col-spacer{flex:none; width:22px;}
-  .lot-rows{display:flex; flex-direction:column; gap:4px;}
-  .lot-row{display:flex; align-items:center; gap:5px;}
-  .lot-row .lot-name{flex:1; min-width:0;}
-  .lot-row .lot-qty{flex:none; width:52px; min-width:0; text-align:center;}
-  .lot-row input{height:24px; padding:2px 6px; font-size:0.85rem; box-sizing:border-box;}
+  /* LOT정보/수량 header, each LOT row, and the 합계수량 row all share this exact
+     3-column template (name | qty(52px) | remove-btn(22px)) so their columns
+     line up pixel-for-pixel regardless of content width. */
+  .lot-col-labels{display:grid; grid-template-columns:1fr 52px 22px; gap:5px; align-items:center; margin-bottom:2px;}
+  .lot-col-labels span{font-size:0.72rem; color:var(--ink-soft); font-weight:600; min-width:0;}
+  .lot-col-labels .lot-col-qty{text-align:center;}
+  .lot-rows{display:grid; grid-template-columns:1fr 52px 22px; gap:4px 5px; align-items:center;}
+  .lot-row{display:contents;}
+  .lot-row .lot-name{min-width:0;}
+  .lot-row .lot-qty{min-width:0; text-align:center;}
+  .lot-row input{height:24px; padding:2px 6px; font-size:0.85rem; box-sizing:border-box; width:100%;}
   .lot-remove-btn{
-    flex:none;
     width:22px; height:24px;
     display:flex; align-items:center; justify-content:center;
     background:var(--surface-2);
@@ -858,18 +864,25 @@
   }
   .lot-add-btn:hover{color:var(--accent); border-color:var(--accent);}
   .lot-add-btn[hidden]{display:none;}
-  .lot-total-row{display:flex; align-items:center; gap:5px;}
+  .lot-total-row{
+    display:grid;
+    grid-template-columns:1fr 52px 22px;
+    gap:5px;
+    align-items:baseline;
+    border-bottom:2px solid var(--lot-total-color);
+    padding-bottom:4px;
+  }
   .lot-total-label{
-    flex:1; min-width:0;
-    font-size:0.72rem;
+    min-width:0;
+    font-size:1rem;
     color:var(--ink-soft);
-    font-weight:600;
+    font-weight:700;
     text-align:right;
   }
   .lot-total{
-    flex:none; width:52px;
+    min-width:0;
     text-align:center;
-    font-size:0.9rem;
+    font-size:1rem;
     font-weight:800;
     font-variant-numeric:tabular-nums;
     color:var(--lot-total-color);
@@ -879,8 +892,8 @@
   .field label{font-size:0.72rem; color:var(--ink-soft); font-weight:600;}
   .field label .field-hint{font-weight:500; opacity:0.7; text-transform:none; letter-spacing:0;}
   .field input, .field select, .field textarea{
-    background:var(--surface-2);
-    border:1px solid var(--line);
+    background:var(--input-sky-bg);
+    border:1px solid var(--input-sky-border);
     border-radius:7px;
     padding:7px 9px;
     color:var(--ink);
