@@ -41,6 +41,7 @@
     --done-badge:#4f7997;
 
     --drop:#fbefc9;
+    --lot-total-color:#d81e0f;
 
     /* 85% of the original "카드 생성" button height (~34px), shared by the
        week-nav / search-box / 카드생성 controls and the view tabs above them */
@@ -78,6 +79,7 @@
       --done-badge:#5c8aa8;
 
       --drop:#4a3f1c;
+      --lot-total-color:#ff6b57;
       color-scheme: dark;
     }
   }
@@ -110,6 +112,7 @@
     --done-badge:#5c8aa8;
 
     --drop:#4a3f1c;
+    --lot-total-color:#ff6b57;
     color-scheme: dark;
   }
 
@@ -828,7 +831,7 @@
   .lot-rows{display:flex; flex-direction:column; gap:4px;}
   .lot-row{display:flex; align-items:center; gap:5px;}
   .lot-row .lot-name{flex:1; min-width:0;}
-  .lot-row .lot-qty{flex:none; width:52px; min-width:0;}
+  .lot-row .lot-qty{flex:none; width:52px; min-width:0; text-align:center;}
   .lot-row input{height:24px; padding:2px 6px; font-size:0.85rem; box-sizing:border-box;}
   .lot-remove-btn{
     flex:none;
@@ -855,12 +858,21 @@
   }
   .lot-add-btn:hover{color:var(--accent); border-color:var(--accent);}
   .lot-add-btn[hidden]{display:none;}
+  .lot-total-row{display:flex; align-items:center; gap:5px;}
+  .lot-total-label{
+    flex:1; min-width:0;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    font-weight:600;
+    text-align:right;
+  }
   .lot-total{
-    padding:2px 0;
-    font-size:0.85rem;
-    font-weight:700;
+    flex:none; width:52px;
+    text-align:center;
+    font-size:0.9rem;
+    font-weight:800;
     font-variant-numeric:tabular-nums;
-    color:var(--wip-text);
+    color:var(--lot-total-color);
   }
   .field{display:flex; flex-direction:column; gap:4px;}
   .field.full{grid-column:1 / -1;}
@@ -1195,8 +1207,11 @@
           <button type="button" class="lot-add-btn" id="addLotRow">+ LOT 추가</button>
         </div>
         <div class="field">
-          <label>합계수량(R)</label>
-          <div class="lot-total" id="fFinalQtyTotal">0</div>
+          <div class="lot-total-row">
+            <span class="lot-total-label">합계수량(R)</span>
+            <span class="lot-total" id="fFinalQtyTotal">0</span>
+            <span class="lot-col-spacer"></span>
+          </div>
         </div>
       </div>
     </div>
