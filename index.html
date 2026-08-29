@@ -821,7 +821,7 @@
   }
   .field-col{display:flex; flex-direction:column; gap:10px;}
   .lot-col-labels{display:flex; align-items:center; gap:5px; margin-bottom:2px;}
-  .lot-col-labels span{font-size:0.66rem; color:var(--ink-soft); font-weight:600;}
+  .lot-col-labels span{font-size:0.72rem; color:var(--ink-soft); font-weight:600;}
   .lot-col-labels .lot-col-name{flex:1; min-width:0;}
   .lot-col-labels .lot-col-qty{flex:none; width:52px;}
   .lot-col-labels .lot-col-spacer{flex:none; width:22px;}
@@ -829,7 +829,7 @@
   .lot-row{display:flex; align-items:center; gap:5px;}
   .lot-row .lot-name{flex:1; min-width:0;}
   .lot-row .lot-qty{flex:none; width:52px; min-width:0;}
-  .lot-row input{height:24px; padding:2px 6px; font-size:0.78rem; box-sizing:border-box;}
+  .lot-row input{height:24px; padding:2px 6px; font-size:0.85rem; box-sizing:border-box;}
   .lot-remove-btn{
     flex:none;
     width:22px; height:24px;
@@ -856,10 +856,7 @@
   .lot-add-btn:hover{color:var(--accent); border-color:var(--accent);}
   .lot-add-btn[hidden]{display:none;}
   .lot-total{
-    background:var(--surface-2);
-    border:1px solid var(--line);
-    border-radius:7px;
-    padding:7px 9px;
+    padding:2px 0;
     font-size:0.85rem;
     font-weight:700;
     font-variant-numeric:tabular-nums;
@@ -1184,12 +1181,11 @@
         </div>
         <div class="field">
           <label for="fCloser">담당자 <span class="field-hint">(마감 입력자 메모)</span></label>
-          <input type="text" id="fCloser" placeholder="마감 처리자 이름을 입력하세요" />
+          <input type="text" id="fCloser" />
         </div>
       </div>
       <div class="field-col">
         <div class="field">
-          <label>LOT 정보 및 수량 <span class="field-hint">(최대 5개)</span></label>
           <div class="lot-col-labels">
             <span class="lot-col-name">LOT정보</span>
             <span class="lot-col-qty">수량(R)</span>
@@ -1937,8 +1933,8 @@
     var row = document.createElement("div");
     row.className = "lot-row";
     row.innerHTML =
-      '<input type="text" class="lot-name" placeholder="LOT 번호" />' +
-      '<input type="text" class="lot-qty" placeholder="수량(R)" />' +
+      '<input type="text" class="lot-name" />' +
+      '<input type="text" class="lot-qty" />' +
       '<button type="button" class="lot-remove-btn" title="이 LOT 삭제">×</button>';
     row.querySelector(".lot-name").value = name || "";
     row.querySelector(".lot-qty").value = qty || "";
