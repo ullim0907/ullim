@@ -813,6 +813,51 @@
     gap:10px;
     margin-bottom:10px;
   }
+  .field-cols{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    margin-bottom:10px;
+  }
+  .field-col{display:flex; flex-direction:column; gap:10px;}
+  .lot-rows{display:flex; flex-direction:column; gap:6px;}
+  .lot-row{display:flex; align-items:center; gap:6px;}
+  .lot-row .lot-name{flex:1.3; min-width:0;}
+  .lot-row .lot-qty{flex:0.8; min-width:0;}
+  .lot-remove-btn{
+    flex:none;
+    width:26px; height:26px;
+    display:flex; align-items:center; justify-content:center;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:7px;
+    color:var(--ink-soft);
+    font-size:0.9rem;
+    line-height:1;
+  }
+  .lot-remove-btn:hover{background:var(--surface); color:var(--wip-text); border-color:var(--wip-border);}
+  .lot-add-btn{
+    align-self:flex-start;
+    background:transparent;
+    border:1px dashed var(--line-strong);
+    color:var(--ink-soft);
+    padding:5px 10px;
+    border-radius:7px;
+    font-size:0.76rem;
+    font-weight:600;
+  }
+  .lot-add-btn:hover{color:var(--accent); border-color:var(--accent);}
+  .lot-add-btn:disabled{opacity:0.4;}
+  .lot-total{
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:7px;
+    padding:7px 9px;
+    font-size:0.85rem;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    color:var(--accent);
+  }
   .field{display:flex; flex-direction:column; gap:4px;}
   .field.full{grid-column:1 / -1;}
   .field label{font-size:0.72rem; color:var(--ink-soft); font-weight:600;}
@@ -1106,44 +1151,49 @@
 
     <hr class="divider" />
 
-    <div class="field-row">
-      <div class="field">
-        <label for="fStatus">카드 상태</label>
-        <select id="fStatus">
-          <option value="planned">작업예정</option>
-          <option value="wip">작업중</option>
-          <option value="done">완료</option>
-          <option value="hold">보류</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="fLot">LOT 정보</label>
-        <input type="text" id="fLot" placeholder="LOT 번호를 입력하세요" />
-      </div>
-      <div class="field">
-        <label for="fStartH">시작시간</label>
-        <div class="time-select-row">
-          <select id="fStartH"></select><span>:</span><select id="fStartM"></select>
+    <div class="field-cols">
+      <div class="field-col">
+        <div class="field">
+          <label for="fStatus">카드 상태</label>
+          <select id="fStatus">
+            <option value="planned">작업예정</option>
+            <option value="wip">작업중</option>
+            <option value="done">완료</option>
+            <option value="hold">보류</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fStartH">시작시간</label>
+          <div class="time-select-row">
+            <select id="fStartH"></select><span>:</span><select id="fStartM"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="fEndH">종료시간</label>
+          <div class="time-select-row">
+            <select id="fEndH"></select><span>:</span><select id="fEndM"></select>
+          </div>
+        </div>
+        <div class="field">
+          <label for="fCloser">담당자 <span class="field-hint">(마감 입력자 메모)</span></label>
+          <input type="text" id="fCloser" placeholder="마감 처리자 이름을 입력하세요" />
         </div>
       </div>
-      <div class="field">
-        <label for="fEndH">종료시간</label>
-        <div class="time-select-row">
-          <select id="fEndH"></select><span>:</span><select id="fEndM"></select>
+      <div class="field-col">
+        <div class="field">
+          <label>LOT 정보 및 수량 <span class="field-hint">(최대 5개)</span></label>
+          <div id="lotRows" class="lot-rows"></div>
+          <button type="button" class="lot-add-btn" id="addLotRow">+ LOT 추가</button>
+        </div>
+        <div class="field">
+          <label>최종수량 (LOT 합계)</label>
+          <div class="lot-total" id="fFinalQtyTotal">0R</div>
         </div>
       </div>
-      <div class="field">
-        <label for="fFinalQty">최종 생산수량 R</label>
-        <input type="text" id="fFinalQty" />
-      </div>
-      <div class="field">
-        <label for="fCloser">담당자 <span class="field-hint">(마감 입력자 메모)</span></label>
-        <input type="text" id="fCloser" placeholder="마감 처리자 이름을 입력하세요" />
-      </div>
-      <div class="field full">
-        <label for="fMemo">특이사항</label>
-        <textarea id="fMemo" placeholder="현장 메모를 입력하세요"></textarea>
-      </div>
+    </div>
+    <div class="field full">
+      <label for="fMemo">특이사항</label>
+      <textarea id="fMemo" placeholder="현장 메모를 입력하세요"></textarea>
     </div>
 
     <div class="dlg-actions" style="justify-content:space-between;">
@@ -1511,7 +1561,9 @@
   // Build a fresh Firebase record for a newly-imported card (paste import only).
   function newCardData(rec){
     var data = {key: rec.key, assignedDate: "", cardstatus: statusFromRaw(rec.rawstatus),
-      start: "", end: "", finalqty: "", lot: "", closer: "", memo: "", order: 0};
+      start: "", end: "", finalqty: "", lot: "", closer: "", memo: "", order: 0,
+      lot1: "", qty1: "", lot2: "", qty2: "", lot3: "", qty3: "",
+      lot4: "", qty4: "", lot5: "", qty5: ""};
     BASE_FIELDS.forEach(function(k){ if (rec[k] !== undefined) data[k] = rec[k]; });
     return data;
   }
@@ -1862,6 +1914,80 @@
   var detailDialog = document.getElementById("detailDialog");
   var currentCard = null;
 
+  // ---------------- LOT 정보 rows (1~5개, 최종수량은 합계로 자동 계산) ----------------
+  var LOT_MAX = 5;
+  var lotRowsEl = document.getElementById("lotRows");
+  var addLotBtn = document.getElementById("addLotRow");
+  var finalQtyTotalEl = document.getElementById("fFinalQtyTotal");
+
+  function buildLotRow(name, qty){
+    var row = document.createElement("div");
+    row.className = "lot-row";
+    row.innerHTML =
+      '<input type="text" class="lot-name" placeholder="LOT 번호" />' +
+      '<input type="text" class="lot-qty" placeholder="수량(R)" />' +
+      '<button type="button" class="lot-remove-btn" title="이 LOT 삭제">×</button>';
+    row.querySelector(".lot-name").value = name || "";
+    row.querySelector(".lot-qty").value = qty || "";
+    return row;
+  }
+  function refreshLotChrome(){
+    var rows = lotRowsEl.querySelectorAll(".lot-row");
+    rows.forEach(function(row){
+      row.querySelector(".lot-remove-btn").style.visibility = rows.length > 1 ? "visible" : "hidden";
+    });
+    addLotBtn.disabled = rows.length >= LOT_MAX;
+    recomputeFinalTotal();
+  }
+  function recomputeFinalTotal(){
+    var rows = Array.prototype.slice.call(lotRowsEl.querySelectorAll(".lot-row"));
+    var total = 0;
+    rows.forEach(function(row){
+      var n = numOr(row.querySelector(".lot-qty").value);
+      if (n) total += n;
+    });
+    total = Math.round(total*100)/100;
+    finalQtyTotalEl.textContent = fmtFinalQty(String(total));
+    return total;
+  }
+  // populate the LOT rows from up to 5 stored lot1/qty1..lot5/qty5 fields —
+  // shows only as many rows as were actually filled in (min 1, max 5)
+  function setLotRowsFromData(d){
+    lotRowsEl.innerHTML = "";
+    var lastFilled = 0;
+    for (var i=1; i<=LOT_MAX; i++){
+      if (d["lot"+i] || d["qty"+i]) lastFilled = i;
+    }
+    var count = Math.max(1, lastFilled);
+    for (var j=1; j<=count; j++){
+      lotRowsEl.appendChild(buildLotRow(d["lot"+j], d["qty"+j]));
+    }
+    refreshLotChrome();
+  }
+  function getLotRows(){
+    return Array.prototype.slice.call(lotRowsEl.querySelectorAll(".lot-row")).map(function(row){
+      return {
+        name: row.querySelector(".lot-name").value.trim(),
+        qty: row.querySelector(".lot-qty").value.trim()
+      };
+    });
+  }
+  addLotBtn.addEventListener("click", function(){
+    if (lotRowsEl.querySelectorAll(".lot-row").length >= LOT_MAX) return;
+    lotRowsEl.appendChild(buildLotRow("", ""));
+    refreshLotChrome();
+  });
+  lotRowsEl.addEventListener("click", function(e){
+    var btn = e.target.closest(".lot-remove-btn");
+    if (!btn) return;
+    if (lotRowsEl.querySelectorAll(".lot-row").length <= 1) return;
+    btn.closest(".lot-row").remove();
+    refreshLotChrome();
+  });
+  lotRowsEl.addEventListener("input", function(e){
+    if (e.target.classList.contains("lot-qty")) recomputeFinalTotal();
+  });
+
   function openDetail(card){
     currentCard = card;
     var d = card.dataset;
@@ -1891,10 +2017,9 @@
     pill.style.border = "1px solid var(--"+st+"-border)";
 
     document.getElementById("fStatus").value = st;
-    document.getElementById("fLot").value = d.lot || "";
+    setLotRowsFromData(d);
     setTimeSelects("fStart", d.start || "");
     setTimeSelects("fEnd", d.end || "");
-    document.getElementById("fFinalQty").value = d.finalqty || "";
     document.getElementById("fCloser").value = d.closer || "";
     document.getElementById("fMemo").value = d.memo || "";
 
@@ -1946,22 +2071,23 @@
   document.getElementById("detailSave").addEventListener("click", function(){
     if (!currentCard || !requireFirebase()) return;
     var status = document.getElementById("fStatus").value;
-    var lot = document.getElementById("fLot").value.trim();
+    var lotRows = getLotRows();
+    var firstLot = lotRows[0] ? lotRows[0].name : "";
+    var total = recomputeFinalTotal();
     var start = getTimeSelects("fStart");
     var end = getTimeSelects("fEnd");
-    var finalqty = document.getElementById("fFinalQty").value.trim();
     var closer = document.getElementById("fCloser").value.trim();
     var memo = document.getElementById("fMemo").value;
 
     var missingLabels = [];
     var missingIds = [];
     if (status === "wip" || status === "done"){
-      if (!lot){ missingLabels.push("LOT 정보"); missingIds.push("fLot"); }
+      if (!firstLot){ missingLabels.push("LOT 정보"); missingIds.push("lotRows"); }
       if (!start){ missingLabels.push("시작시간"); missingIds.push("fStartH"); }
     }
     if (status === "done"){
       if (!end){ missingLabels.push("종료시간"); missingIds.push("fEndH"); }
-      if (!finalqty){ missingLabels.push("최종 생산수량 R"); missingIds.push("fFinalQty"); }
+      if (!total){ missingLabels.push("최종수량(LOT 합계)"); missingIds.push("fFinalQtyTotal"); }
       if (!closer){ missingLabels.push("담당자"); missingIds.push("fCloser"); }
     }
     if (missingLabels.length){
@@ -1970,10 +2096,20 @@
       return;
     }
 
-    fbUpdate(currentCard.dataset.key, {
-      cardstatus: status, lot: lot, start: start, end: end,
-      finalqty: finalqty, closer: closer, memo: memo
-    });
+    var patch = {
+      cardstatus: status, start: start, end: end,
+      closer: closer, memo: memo, finalqty: total ? String(total) : ""
+    };
+    for (var i=0; i<LOT_MAX; i++){
+      patch["lot"+(i+1)] = lotRows[i] ? lotRows[i].name : "";
+      patch["qty"+(i+1)] = lotRows[i] ? lotRows[i].qty : "";
+    }
+    // combined display string for the card body / Raw Data "LOT정보" column
+    patch.lot = lotRows.filter(function(r){ return r.name || r.qty; })
+      .map(function(r){ return r.name + (r.qty ? " " + fmtFinalQty(r.qty) : ""); })
+      .join(", ");
+
+    fbUpdate(currentCard.dataset.key, patch);
     detailDialog.close();
     toast("저장되었습니다");
   });
