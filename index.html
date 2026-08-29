@@ -42,8 +42,6 @@
 
     --drop:#fbefc9;
     --lot-total-color:#d81e0f;
-    --input-sky-bg:#e4f3fb;
-    --input-sky-border:#a9d6ec;
 
     /* 85% of the original "카드 생성" button height (~34px), shared by the
        week-nav / search-box / 카드생성 controls and the view tabs above them */
@@ -82,8 +80,6 @@
 
       --drop:#4a3f1c;
       --lot-total-color:#ff6b57;
-      --input-sky-bg:#1d3040;
-      --input-sky-border:#3f688a;
       color-scheme: dark;
     }
   }
@@ -117,8 +113,6 @@
 
     --drop:#4a3f1c;
     --lot-total-color:#ff6b57;
-    --input-sky-bg:#1d3040;
-    --input-sky-border:#3f688a;
     color-scheme: dark;
   }
 
@@ -869,8 +863,6 @@
     grid-template-columns:1fr 52px 22px;
     gap:5px;
     align-items:baseline;
-    border-bottom:2px solid var(--lot-total-color);
-    padding-bottom:4px;
   }
   .lot-total-label{
     min-width:0;
@@ -892,8 +884,8 @@
   .field label{font-size:0.72rem; color:var(--ink-soft); font-weight:600;}
   .field label .field-hint{font-weight:500; opacity:0.7; text-transform:none; letter-spacing:0;}
   .field input, .field select, .field textarea{
-    background:var(--input-sky-bg);
-    border:1px solid var(--input-sky-border);
+    background:var(--wip-bg);
+    border:1px solid var(--wip-border);
     border-radius:7px;
     padding:7px 9px;
     color:var(--ink);
@@ -901,6 +893,7 @@
     font-size:0.85rem;
   }
   .field input, .field select{height:32px; box-sizing:border-box;}
+  .field select{padding:0 9px; line-height:30px; font-size:0.78rem;}
   .field textarea{min-height:60px; resize:vertical; font-family:inherit;}
   .field-invalid{
     border-color:var(--wip-border) !important;
