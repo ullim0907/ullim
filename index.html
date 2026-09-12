@@ -669,6 +669,31 @@
     width:min(560px, 92vw);
     box-shadow:0 20px 60px rgba(0,0,0,0.25);
   }
+  #detailDialog{width:min(940px, 96vw);}
+  #detailDialog .dlg-inner{max-height:92vh; overflow-y:auto;}
+  .detail-main{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+    align-items:start;
+  }
+  .detail-info-col{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    border-right:1px solid var(--line);
+    padding-right:22px;
+  }
+  .detail-input-col{display:flex; flex-direction:column; gap:10px;}
+  @media (max-width:720px){
+    .detail-main{grid-template-columns:1fr;}
+    .detail-info-col{
+      border-right:none;
+      border-bottom:1px solid var(--line);
+      padding-right:0;
+      padding-bottom:14px;
+    }
+  }
   dialog::backdrop{
     background:rgba(20,18,14,0.45);
   }
@@ -1132,98 +1157,102 @@
         <span class="badge-status-pill" id="detailStatusPill">-</span>
       </div>
     </div>
-    <div class="detail-box">
-      <div class="detail-row"><span class="detail-k">예정일</span><span class="detail-v" id="dDate">-</span></div>
-      <div class="detail-row"><span class="detail-k">창고</span><span class="detail-v" id="dWarehouse">-</span></div>
-      <div class="detail-row"><span class="detail-k">매출처</span><span class="detail-v" id="dBuyer">-</span></div>
-      <div class="detail-row"><span class="detail-k">납기일</span><span class="detail-v" id="dDue">-</span></div>
-      <div class="detail-row"><span class="detail-k">입고처</span><span class="detail-v" id="dArrival">-</span></div>
-    </div>
-
-    <div class="detail-table-wrap">
-      <div class="detail-table-title">소요재고</div>
-      <div class="detail-table-scroll">
-        <table class="detail-table">
-          <thead><tr><th>지종</th><th>평량</th><th>가로</th><th>세로</th><th>소요량</th></tr></thead>
-          <tbody><tr>
-            <td id="dNeedPaper">-</td><td id="dNeedBasis">-</td><td id="dNeedW">-</td><td id="dNeedH">-</td><td id="dNeedQty">-</td>
-          </tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="detail-table-wrap">
-      <div class="detail-table-title">컨버팅계획재고</div>
-      <div class="detail-table-scroll">
-        <table class="detail-table">
-          <thead><tr><th>지종</th><th>평량</th><th>가로</th><th>세로</th><th>계획량</th></tr></thead>
-          <tbody><tr>
-            <td id="dPlanPaper">-</td><td id="dPlanBasis">-</td><td id="dPlanW">-</td><td id="dPlanH">-</td><td id="dPlanQty">-</td>
-          </tr></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="detail-note-box">
-      <div class="detail-table-title-row">
-        <span class="detail-table-title">비고</span>
-        <span class="detail-registrant">등록 <span id="dReg">-</span></span>
-      </div>
-      <p id="dNote">-</p>
-    </div>
-
-    <hr class="divider" />
-
-    <div class="field-cols">
-      <div class="field-col">
-        <div class="field">
-          <label for="fStatus">카드 상태</label>
-          <select id="fStatus">
-            <option value="planned">작업예정</option>
-            <option value="wip">작업중</option>
-            <option value="done">완료</option>
-            <option value="hold">보류</option>
-          </select>
+    <div class="detail-main">
+      <div class="detail-info-col">
+        <div class="detail-box">
+          <div class="detail-row"><span class="detail-k">예정일</span><span class="detail-v" id="dDate">-</span></div>
+          <div class="detail-row"><span class="detail-k">창고</span><span class="detail-v" id="dWarehouse">-</span></div>
+          <div class="detail-row"><span class="detail-k">매출처</span><span class="detail-v" id="dBuyer">-</span></div>
+          <div class="detail-row"><span class="detail-k">납기일</span><span class="detail-v" id="dDue">-</span></div>
+          <div class="detail-row"><span class="detail-k">입고처</span><span class="detail-v" id="dArrival">-</span></div>
         </div>
-        <div class="field">
-          <label for="fStartH">시작시간</label>
-          <div class="time-select-row">
-            <select id="fStartH"></select><span>:</span><select id="fStartM"></select>
+
+        <div class="detail-table-wrap">
+          <div class="detail-table-title">소요재고</div>
+          <div class="detail-table-scroll">
+            <table class="detail-table">
+              <thead><tr><th>지종</th><th>평량</th><th>가로</th><th>세로</th><th>소요량</th></tr></thead>
+              <tbody><tr>
+                <td id="dNeedPaper">-</td><td id="dNeedBasis">-</td><td id="dNeedW">-</td><td id="dNeedH">-</td><td id="dNeedQty">-</td>
+              </tr></tbody>
+            </table>
           </div>
         </div>
-        <div class="field">
-          <label for="fEndH">종료시간</label>
-          <div class="time-select-row">
-            <select id="fEndH"></select><span>:</span><select id="fEndM"></select>
+
+        <div class="detail-table-wrap">
+          <div class="detail-table-title">컨버팅계획재고</div>
+          <div class="detail-table-scroll">
+            <table class="detail-table">
+              <thead><tr><th>지종</th><th>평량</th><th>가로</th><th>세로</th><th>계획량</th></tr></thead>
+              <tbody><tr>
+                <td id="dPlanPaper">-</td><td id="dPlanBasis">-</td><td id="dPlanW">-</td><td id="dPlanH">-</td><td id="dPlanQty">-</td>
+              </tr></tbody>
+            </table>
           </div>
         </div>
-        <div class="field">
-          <label for="fCloser">담당자 <span class="field-hint">(마감 입력자 메모)</span></label>
-          <input type="text" id="fCloser" />
+
+        <div class="detail-note-box">
+          <div class="detail-table-title-row">
+            <span class="detail-table-title">비고</span>
+            <span class="detail-registrant">등록 <span id="dReg">-</span></span>
+          </div>
+          <p id="dNote">-</p>
         </div>
       </div>
-      <div class="field-col">
-        <div class="field">
-          <div class="lot-col-labels">
-            <span class="lot-col-name">LOT정보</span>
-            <span class="lot-col-qty">수량(R)</span>
-            <span class="lot-col-spacer"></span>
+
+      <div class="detail-input-col">
+        <div class="field-cols">
+          <div class="field-col">
+            <div class="field">
+              <label for="fStatus">카드 상태</label>
+              <select id="fStatus">
+                <option value="planned">작업예정</option>
+                <option value="wip">작업중</option>
+                <option value="done">완료</option>
+                <option value="hold">보류</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="fStartH">시작시간</label>
+              <div class="time-select-row">
+                <select id="fStartH"></select><span>:</span><select id="fStartM"></select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="fEndH">종료시간</label>
+              <div class="time-select-row">
+                <select id="fEndH"></select><span>:</span><select id="fEndM"></select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="fCloser">담당자 <span class="field-hint">(마감 입력자 메모)</span></label>
+              <input type="text" id="fCloser" />
+            </div>
           </div>
-          <div id="lotRows" class="lot-rows"></div>
-          <button type="button" class="lot-add-btn" id="addLotRow">+ LOT 추가</button>
+          <div class="field-col">
+            <div class="field">
+              <div class="lot-col-labels">
+                <span class="lot-col-name">LOT정보</span>
+                <span class="lot-col-qty">수량(R)</span>
+                <span class="lot-col-spacer"></span>
+              </div>
+              <div id="lotRows" class="lot-rows"></div>
+              <button type="button" class="lot-add-btn" id="addLotRow">+ LOT 추가</button>
+            </div>
+            <div class="field">
+              <div class="lot-total-row">
+                <span class="lot-total-label">합계수량(R)</span>
+                <span class="lot-total" id="fFinalQtyTotal">0</span>
+                <span class="lot-col-spacer"></span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="field">
-          <div class="lot-total-row">
-            <span class="lot-total-label">합계수량(R)</span>
-            <span class="lot-total" id="fFinalQtyTotal">0</span>
-            <span class="lot-col-spacer"></span>
-          </div>
+        <div class="field full">
+          <label for="fMemo">특이사항</label>
+          <textarea id="fMemo" placeholder="현장 메모를 입력하세요"></textarea>
         </div>
       </div>
-    </div>
-    <div class="field full">
-      <label for="fMemo">특이사항</label>
-      <textarea id="fMemo" placeholder="현장 메모를 입력하세요"></textarea>
     </div>
 
     <div class="dlg-actions" style="justify-content:space-between;">
