@@ -673,7 +673,7 @@
   #detailDialog .dlg-inner{max-height:92vh; overflow-y:auto;}
   .detail-main{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:0.85fr 1.15fr;
     gap:24px;
     align-items:start;
   }
@@ -843,7 +843,7 @@
   }
   .field-cols{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:0.7fr 1.15fr;
     gap:16px;
     margin-bottom:10px;
   }
@@ -854,13 +854,13 @@
   .lot-col-labels{display:grid; grid-template-columns:1fr 52px 22px; gap:5px; align-items:center; margin-bottom:2px;}
   .lot-col-labels span{font-size:0.72rem; color:var(--ink-soft); font-weight:600; min-width:0;}
   .lot-col-labels .lot-col-qty{text-align:center;}
-  .lot-rows{display:grid; grid-template-columns:1fr 52px 22px; gap:4px 5px; align-items:center;}
+  .lot-rows{display:grid; grid-template-columns:1fr 52px 22px; gap:3px 5px; align-items:center;}
   .lot-row{display:contents;}
   .lot-row .lot-name{min-width:0;}
   .lot-row .lot-qty{min-width:0; text-align:center;}
-  .lot-row input{height:24px; padding:2px 6px; font-size:0.85rem; box-sizing:border-box; width:100%;}
+  .lot-row input{height:22px; padding:1px 6px; font-size:0.85rem; box-sizing:border-box; width:100%;}
   .lot-remove-btn{
-    width:22px; height:24px;
+    width:22px; height:22px;
     display:flex; align-items:center; justify-content:center;
     background:var(--surface-2);
     border:1px solid var(--line);
@@ -1622,7 +1622,9 @@
     var data = {key: rec.key, assignedDate: "", cardstatus: statusFromRaw(rec.rawstatus),
       start: "", end: "", finalqty: "", lot: "", closer: "", memo: "", order: 0,
       lot1: "", qty1: "", lot2: "", qty2: "", lot3: "", qty3: "",
-      lot4: "", qty4: "", lot5: "", qty5: ""};
+      lot4: "", qty4: "", lot5: "", qty5: "",
+      lot6: "", qty6: "", lot7: "", qty7: "", lot8: "", qty8: "",
+      lot9: "", qty9: "", lot10: "", qty10: ""};
     BASE_FIELDS.forEach(function(k){ if (rec[k] !== undefined) data[k] = rec[k]; });
     return data;
   }
@@ -1973,8 +1975,8 @@
   var detailDialog = document.getElementById("detailDialog");
   var currentCard = null;
 
-  // ---------------- LOT 정보 rows (1~5개, 최종수량은 합계로 자동 계산) ----------------
-  var LOT_MAX = 5;
+  // ---------------- LOT 정보 rows (1~10개, 최종수량은 합계로 자동 계산) ----------------
+  var LOT_MAX = 10;
   var lotRowsEl = document.getElementById("lotRows");
   var addLotBtn = document.getElementById("addLotRow");
   var finalQtyTotalEl = document.getElementById("fFinalQtyTotal");
@@ -2009,7 +2011,7 @@
     finalQtyTotalEl.textContent = String(total);
     return total;
   }
-  // populate the LOT rows from up to 5 stored lot1/qty1..lot5/qty5 fields —
+  // populate the LOT rows from up to 10 stored lot1/qty1..lot10/qty10 fields —
   // shows only as many rows as were actually filled in (min 1, max 5)
   function setLotRowsFromData(d){
     lotRowsEl.innerHTML = "";
