@@ -740,6 +740,14 @@
   }
 
   /* detail dialog */
+  .detail-reg-line{
+    text-align:right;
+    font-size:0.72rem;
+    color:var(--ink-soft);
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+    margin-bottom:4px;
+  }
   .detail-box{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -926,7 +934,7 @@
   }
   .field input, .field select{height:32px; box-sizing:border-box;}
   .field select{padding:0 9px; line-height:30px; font-size:0.78rem;}
-  .field textarea{height:60px; resize:none; font-family:inherit;}
+  .field textarea{height:34px; box-sizing:border-box; resize:none; font-family:inherit;}
   .field-invalid{
     border-color:var(--wip-border) !important;
     box-shadow:0 0 0 2px var(--wip-bg);
@@ -1166,6 +1174,7 @@
     </div>
     <div class="detail-main">
       <div class="detail-info-col">
+        <div class="detail-reg-line" id="dRegisteredAt">-</div>
         <div class="detail-box">
           <div class="detail-row"><span class="detail-k">예정일</span><span class="detail-v" id="dDate">-</span></div>
           <div class="detail-row"><span class="detail-k">창고</span><span class="detail-v" id="dWarehouse">-</span></div>
@@ -1548,6 +1557,12 @@
     s = String(s || "").replace(/[^0-9]/g, "");
     if (s.length === 8) return s.slice(0,4)+"-"+s.slice(4,6)+"-"+s.slice(6,8);
     return s || "-";
+  }
+  // "등록일시" is pasted as free-form text; show it as a plain digit string
+  // (YYYYMMDDHHmmss, or however many digits it actually carries).
+  function fmtRegisteredAt(v){
+    var digits = String(v || "").replace(/[^0-9]/g, "");
+    return digits ? ("(등록일시 " + digits + ")") : "-";
   }
   var WEEKDAY_KR = ["일","월","화","수","목","금","토"];
   function fmtDateWithDay(s){
@@ -2059,6 +2074,7 @@
   function openDetail(card){
     currentCard = card;
     var d = card.dataset;
+    document.getElementById("dRegisteredAt").textContent = fmtRegisteredAt(d.registeredAt);
     document.getElementById("dBuyer").textContent = d.buyer || "-";
     document.getElementById("dArrival").textContent = d.arrival || "-";
     document.getElementById("dDue").textContent = fmtDateFull(d.due);
