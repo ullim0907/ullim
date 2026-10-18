@@ -674,7 +674,7 @@
   .detail-main{
     display:grid;
     grid-template-columns:0.85fr 1.15fr;
-    gap:24px;
+    gap:12px;
     align-items:start;
   }
   .detail-info-col{
@@ -682,7 +682,7 @@
     flex-direction:column;
     gap:14px;
     border-right:1px solid var(--line);
-    padding-right:22px;
+    padding-right:11px;
   }
   .detail-input-col{display:flex; flex-direction:column; gap:10px;}
   @media (max-width:720px){
@@ -851,16 +851,16 @@
   /* LOT정보/수량 header, each LOT row, and the 합계수량 row all share this exact
      3-column template (name | qty(52px) | remove-btn(22px)) so their columns
      line up pixel-for-pixel regardless of content width. */
-  .lot-col-labels{display:grid; grid-template-columns:1fr 52px 22px; gap:5px; align-items:center; margin-bottom:2px;}
+  .lot-col-labels{display:grid; grid-template-columns:1fr 74px 22px; gap:5px; align-items:center; margin-bottom:0;}
   .lot-col-labels span{font-size:0.72rem; color:var(--ink-soft); font-weight:600; min-width:0;}
   .lot-col-labels .lot-col-qty{text-align:center;}
-  .lot-rows{display:grid; grid-template-columns:1fr 52px 22px; gap:3px 5px; align-items:center;}
+  .lot-rows{display:grid; grid-template-columns:1fr 74px 22px; gap:3px 5px; align-items:center;}
   .lot-row{display:contents;}
   .lot-row .lot-name{min-width:0;}
   .lot-row .lot-qty{min-width:0; text-align:center;}
-  .lot-row input{height:22px; padding:1px 6px; font-size:0.85rem; box-sizing:border-box; width:100%;}
+  .lot-row input{height:20px; padding:1px 6px; font-size:0.85rem; box-sizing:border-box; width:100%;}
   .lot-remove-btn{
-    width:22px; height:22px;
+    width:22px; height:20px;
     display:flex; align-items:center; justify-content:center;
     background:var(--surface-2);
     border:1px solid var(--line);
@@ -871,7 +871,6 @@
   }
   .lot-remove-btn:hover{background:var(--surface); color:var(--wip-text); border-color:var(--wip-border);}
   .lot-add-btn{
-    align-self:flex-start;
     background:transparent;
     border:1px dashed var(--line-strong);
     color:var(--ink-soft);
@@ -879,15 +878,22 @@
     border-radius:7px;
     font-size:0.72rem;
     font-weight:600;
-    margin-top:4px;
   }
   .lot-add-btn:hover{color:var(--accent); border-color:var(--accent);}
   .lot-add-btn[hidden]{display:none;}
-  .lot-total-row{
+  .lot-footer-row{
     display:grid;
-    grid-template-columns:1fr 52px 22px;
+    grid-template-columns:1fr 74px 22px;
     gap:5px;
-    align-items:baseline;
+    align-items:center;
+    margin-top:4px;
+  }
+  .lot-footer-left{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    min-width:0;
   }
   .lot-total-label{
     min-width:0;
@@ -895,6 +901,7 @@
     color:var(--ink-soft);
     font-weight:700;
     text-align:right;
+    white-space:nowrap;
   }
   .lot-total{
     min-width:0;
@@ -919,7 +926,7 @@
   }
   .field input, .field select{height:32px; box-sizing:border-box;}
   .field select{padding:0 9px; line-height:30px; font-size:0.78rem;}
-  .field textarea{min-height:60px; resize:vertical; font-family:inherit;}
+  .field textarea{height:60px; resize:none; font-family:inherit;}
   .field-invalid{
     border-color:var(--wip-border) !important;
     box-shadow:0 0 0 2px var(--wip-bg);
@@ -1237,11 +1244,11 @@
                 <span class="lot-col-spacer"></span>
               </div>
               <div id="lotRows" class="lot-rows"></div>
-              <button type="button" class="lot-add-btn" id="addLotRow">+ LOT 추가</button>
-            </div>
-            <div class="field">
-              <div class="lot-total-row">
-                <span class="lot-total-label">합계수량(R)</span>
+              <div class="lot-footer-row">
+                <div class="lot-footer-left">
+                  <button type="button" class="lot-add-btn" id="addLotRow">+ LOT 추가</button>
+                  <span class="lot-total-label">합계수량(R)</span>
+                </div>
                 <span class="lot-total" id="fFinalQtyTotal">0</span>
                 <span class="lot-col-spacer"></span>
               </div>
