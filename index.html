@@ -741,11 +741,12 @@
 
   /* detail dialog */
   .detail-reg-line{
+    text-align:right;
     font-size:0.72rem;
     color:var(--ink-soft);
     font-weight:600;
     font-variant-numeric:tabular-nums;
-    white-space:nowrap;
+    margin-bottom:3px;
   }
   .detail-box{
     display:grid;
@@ -933,7 +934,7 @@
   }
   .field input, .field select{height:32px; box-sizing:border-box;}
   .field select{padding:0 9px; line-height:30px; font-size:0.78rem;}
-  .field textarea{height:34px; min-height:34px; box-sizing:border-box; resize:none; font-family:inherit;}
+  .field textarea{height:136px; min-height:136px; box-sizing:border-box; resize:none; font-family:inherit;}
   .field-invalid{
     border-color:var(--wip-border) !important;
     box-shadow:0 0 0 2px var(--wip-bg);
@@ -1164,10 +1165,7 @@
 <dialog id="detailDialog">
   <div class="dlg-inner">
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px;">
-      <div style="display:flex; align-items:baseline; gap:10px; min-width:0;">
-        <h2 style="margin:0;">스케줄 상세</h2>
-        <span class="detail-reg-line" id="dRegisteredAt">-</span>
-      </div>
+      <h2 style="margin:0;">스케줄 상세</h2>
       <div style="display:flex; align-items:center; gap:6px;">
         <button class="week-shift-btn" id="shiftPrevWeek" type="button" title="이전주 토요일로 이동">◀ 이전주</button>
         <button class="week-shift-btn" id="shiftNextWeek" type="button" title="다음주 월요일로 이동">다음주 ▶</button>
@@ -1176,6 +1174,7 @@
     </div>
     <div class="detail-main">
       <div class="detail-info-col">
+        <div class="detail-reg-line" id="dRegisteredAt">-</div>
         <div class="detail-box">
           <div class="detail-row"><span class="detail-k">예정일</span><span class="detail-v" id="dDate">-</span></div>
           <div class="detail-row"><span class="detail-k">창고</span><span class="detail-v" id="dWarehouse">-</span></div>
